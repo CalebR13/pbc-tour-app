@@ -126,6 +126,17 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0Y
 </div>
 
 <div class="panel active" id="panel-finances">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;margin-top:4px">
+    <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">Filter by category:</span>
+    <select id="cat-filter" onchange="filterByCategory()" style="background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:7px 14px;border-radius:6px;font-family:Montserrat,sans-serif;font-size:13px;cursor:pointer">
+      <option value="">All Categories</option>
+      <option>Food &amp; Meals</option>
+      <option>Transportation / Fuel</option>
+      <option>Lodging</option>
+      <option>Activities</option>
+      <option>Other</option>
+    </select>
+  </div>
   <div id="fin-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
 </div>
 <div class="panel" id="panel-income">
