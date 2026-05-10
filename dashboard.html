@@ -131,7 +131,7 @@
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0YQJy7Ea4w0sUIo4kvYaaei407FxBMPlUgPrwLtirI2aoL4fk/exec";
 </script>
 
-<div id="debug-banner" style="display:none;background:#E05555;color:#fff;padding:10px 16px;font-size:13px;font-family:Montserrat,sans-serif;position:fixed;top:0;left:0;right:0;z-index:9999"></div>
+<div id="debug-banner" style="display:block;background:#E05555;color:#fff;padding:10px 16px;font-size:13px;font-family:Montserrat,sans-serif;position:fixed;top:0;left:0;right:0;z-index:9999">Page loaded — JS starting...</div>
 <div class="topbar" style="margin-top:0" id="main-topbar">
   <div class="topbar-left">
     <h1><span style="color:var(--gold)">P</span>BC Tour Dashboard</h1>
@@ -280,6 +280,9 @@ async function loadData() {
 }
 
 function showLoading() {
+  const banner = document.getElementById('debug-banner');
+  banner.style.display = 'block';
+  banner.textContent = 'showLoading called — fetch starting...';
   document.querySelectorAll('[id$="-loading"]').forEach(el => {
     el.style.display = 'block';
     el.innerHTML = '<div class="spinner"></div>Loading…';
