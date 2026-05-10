@@ -89,10 +89,7 @@ td a:hover, .view-link:hover { text-decoration: underline; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
 .error-msg { color: var(--red); font-size: 13px; padding: 20px; text-align: center; }
-.lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
-.lightbox.show { display: flex; }
-.lightbox img { max-width: 92vw; max-height: 80vh; border-radius: 8px; object-fit: contain; }
-.lightbox-close { position: fixed; top: 20px; right: 20px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: 'Montserrat', sans-serif; }
+
 @media (max-width: 600px) { .chart-row { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -152,10 +149,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0Y
   <div id="log-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
 </div>
 
-<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
-  <button class="lightbox-close" onclick="closeLightbox()">x</button>
-  <img id="lightbox-img" src="" alt="Preview">
-</div>
+
 
 <script>
 var cachedData = null;
@@ -197,31 +191,7 @@ function fmtTime(val) {
   return isNaN(d) ? '-' : d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
 }
 
-function driveUrl(url) {
-  if (!url) return url;
-  var m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (m) return 'https://drive.google.com/uc?export=view&id=' + m[1];
-  var m2 = url.match(/id=([a-zA-Z0-9_-]+)/);
-  if (m2) return 'https://drive.google.com/uc?export=view&id=' + m2[1];
-  return url;
-}
 
-function openLightbox(url) {
-  document.getElementById('lightbox-img').src = driveUrl(url);
-  document.getElementById('lightbox').classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeLightbox(e) {
-  if (e && e.target !== document.getElementById('lightbox') && !e.target.classList.contains('lightbox-close')) return;
-  document.getElementById('lightbox').classList.remove('show');
-  document.getElementById('lightbox-img').src = '';
-  document.body.style.overflow = '';
-}
-
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') { document.getElementById('lightbox').classList.remove('show'); document.body.style.overflow = ''; }
-});
 
 function filterByCategory() {
   if (!cachedData) return;
