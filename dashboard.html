@@ -251,14 +251,17 @@ function switchTab(name, el) {
 
 async function loadData() {
   showLoading();
+  showError('Step 1: Starting fetch...');
   try {
     const resp = await fetch(SCRIPT_URL + '?t=' + Date.now(), {
       method: 'GET',
       redirect: 'follow',
       mode: 'cors'
     });
+    showError('Step 2: Got response, status: ' + resp.status);
     if (!resp.ok) { showError('HTTP error: ' + resp.status); return; }
     const text = await resp.text();
+    showError('Step 3: Got text, length: ' + text.length + ', preview: ' + text.slice(0, 100));
     let data;
     try {
       data = JSON.parse(text);
@@ -266,11 +269,12 @@ async function loadData() {
       showError('Parse error — response was: ' + text.slice(0, 200));
       return;
     }
+    showError('Step 4: Parsed OK, keys: ' + Object.keys(data).join(', '));
     if (data.error) { showError(data.error); return; }
     cachedData = data;
     renderAll(data);
   } catch(err) {
-    showError('Network error: ' + err.message + '. Make sure Apps Script is deployed as "Anyone" can access.');
+    showError('Network error: ' + err.message);
   }
 }
 
