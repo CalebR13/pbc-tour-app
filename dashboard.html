@@ -502,94 +502,41 @@ loadData();
 
 function exportCSV(type) {
   if (!cachedData) return;
-  let rows = [];
-  let filename = '';
-
-  const filter = r => {
+  var rows = [];
+  var filename = '';
+  var filterFn = function(r) {
     if (activeFilter === 'all') return true;
-    const g = (r['Tour Group'] || '').toLowerCase();
-    return activeFilter === 'mens' ? g === 'mens' || g === '' : g === 'ladies';
+    var g = (r['Tour Group'] || '').toLowerCase();
+    return activeFilter === 'mens' ? (g === 'mens' || g === '') : g === 'ladies';
   };
-
-  if (type === 'expenses') {
-    rows = (cachedData.expenses || []).filter(filter);
-    filename = 'PBC_Tour_Expenses';
-  } else if (type === 'income') {
-    rows = (cachedData.income || []).filter(filter);
-    filename = 'PBC_Tour_Income';
-  } else if (type === 'evaluations') {
-    rows = (cachedData.evaluations || []).filter(filter);
-    filename = 'PBC_Tour_Church_Evaluations';
-  } else if (type === 'contacts') {
-    rows = (cachedData.infocards || []).filter(filter);
-    filename = 'PBC_Tour_Interest_Cards';
-  }
-
+  if (type === 'expenses') { rows = (cachedData.expenses || []).filter(filterFn); filename = 'PBC_Tour_Expenses'; }
+  else if (type === 'income') { rows = (cachedData.income || []).filter(filterFn); filename = 'PBC_Tour_Income'; }
+  else if (type === 'evaluations') { rows = (cachedData.evaluations || []).filter(filterFn); filename = 'PBC_Tour_Evaluations'; }
+  else if (type === 'contacts') { rows = (cachedData.infocards || []).filter(filterFn); filename = 'PBC_Tour_Interest_Cards'; }
   if (!rows.length) { alert('No data to export.'); return; }
 
-  // Build CSV
-  const headers = Object.keys(rows[0]);
-  const escape = val => {
-    const str = val === null || val === undefined ? '' : String(val);
-    const needsQuoting = str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r');
-    return needsQuoting ? '"' + str.replace(/"/g, '""') + '"' : str;
-  };
-  const csv = [
-    headers.map(escape).join(','),
-    ...rows.map(row => headers.map(h => escape(row[h])).join(','))
-  ].join('
-');
+  var headers = Object.keys(rows[0]);
+  var csvRows = [headers.join(',')];
+  rows.forEach(function(row) {
+    var vals = headers.map(function(h) {
+      var val = row[h] === null || row[h] === undefined ? '' : String(row[h]);
+      if (val.indexOf(',') > -1 || val.indexOf('"') > -1) {
+        val = '"' + val.replace(/"/g, '""') + '"';
+      }
+      return val;
+    });
+    csvRows.push(vals.join(','));
+  });
 
-  // Add filter label to filename
-  const filterLabel = activeFilter !== 'all' ? '_' + activeFilter : '';
-  const date = new Date().toISOString().split('T')[0];
-  const fullName = `${filename}${filterLabel}_${date}.csv`;
-
-  // Download
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  var csv = csvRows.join('\r\n');
+  var filterLabel = activeFilter !== 'all' ? '_' + activeFilter : '';
+  var date = new Date().toISOString().split('T')[0];
+  var fullName = filename + filterLabel + '_' + date + '.csv';
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
   a.href = url; a.download = fullName;
   document.body.appendChild(a); a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-</script>
-<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
-  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-  <img id="lightbox-img" src="" alt="Preview">
-  <div class="lightbox-label" id="lightbox-label"></div>
-</div>
-
-<script>
-function driveDirectUrl(url) {
-  if (!url) return url;
-  // Convert Google Drive share link to direct view URL
-  const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (match) return `https://drive.google.com/uc?export=view&id=${match[1]}`;
-  const idMatch = url.match(/id=([a-zA-Z0-9_-]+)/);
-  if (idMatch) return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
-  return url;
-}
-
-function openLightbox(url, label) {
-  const lb = document.getElementById('lightbox');
-  const img = document.getElementById('lightbox-img');
-  const lbl = document.getElementById('lightbox-label');
-  img.src = driveDirectUrl(url);
-  lbl.textContent = label || '';
-  lb.classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeLightbox(e) {
-  if (e && e.target !== document.getElementById('lightbox') && !e.target.classList.contains('lightbox-close')) return;
-  document.getElementById('lightbox').classList.remove('show');
-  document.getElementById('lightbox-img').src = '';
-  document.body.style.overflow = '';
-}
-
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeLightbox({target: document.getElementById('lightbox')}); });
-</script>
-</body>
-</html>
