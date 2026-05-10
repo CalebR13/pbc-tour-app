@@ -7,122 +7,93 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg: #2a2a2a; --surface: #333333; --surface2: #3d3d3d;
-    --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.16);
-    --text: #f0ede8; --muted: #9a9590; --dim: #5a5550;
-    --gold: #f7b214; --gold-bg: rgba(247,178,20,0.12); --gold-dark: #c8900e;
-    --green: #2ECC8A; --green-bg: rgba(46,204,138,0.1);
-    --red: #E05555; --red-bg: rgba(224,85,85,0.1);
-    --amber: #f7b214; --amber-bg: rgba(247,178,20,0.12);
-    --blue: #7BAFF8; --blue-bg: rgba(123,175,248,0.1);
-    --radius: 10px; --radius-sm: 6px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-
-  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 3px solid var(--gold); position: sticky; top: 0; background: var(--bg); z-index: 10; }
-  .topbar-left h1 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 20px; font-weight: 400; }
-  .topbar-left p { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .topbar-right { display: flex; align-items: center; gap: 8px; }
-  .live-badge { display: flex; align-items: center; gap: 6px; background: var(--gold-bg); border: 1px solid rgba(247,178,20,0.3); padding: 5px 12px; border-radius: 20px; font-size: 12px; color: var(--gold); font-weight: 500; }
-  .live-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
-  .refresh-btn { background: var(--surface); border: 1px solid var(--border2); color: var(--muted); padding: 6px 14px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
-  .refresh-btn:hover { color: var(--text); border-color: var(--text); }
-
-  .tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 24px; overflow-x: auto; }
-  .filter-bar { display: flex; align-items: center; gap: 8px; padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--border); }
-  .filter-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-right: 4px; }
-  .filter-btn { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; font-family: 'Montserrat', sans-serif; cursor: pointer; border: 1px solid var(--border2); background: transparent; color: var(--muted); transition: all 0.2s; }
-  .filter-btn:hover { color: var(--text); border-color: var(--text); }
-  .filter-btn.active { background: var(--dark); color: var(--text); border-color: var(--gold); }
-  .filter-btn.mens.active { background: var(--surface2); border-color: var(--blue); color: var(--blue); }
-  .filter-btn.ladies.active { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
-  .tab { padding: 12px 18px; font-size: 14px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; white-space: nowrap; }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
-
-  .panel { display: none; padding: 24px; max-width: 1100px; }
-  .panel.active { display: block; }
-
-  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; }
-  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-  .metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
-  .metric-value { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; }
-  .metric-value.green { color: var(--green); }
-  .metric-value.red { color: var(--red); }
-  .metric-value.amber { color: var(--gold); }
-  .metric-value.blue { color: var(--blue); }
-  .metric-sub { font-size: 11px; color: var(--dim); margin-top: 4px; }
-
-  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-  .chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
-  .chart-title { font-size: 11px; font-weight: 500; color: var(--muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .chart-wrap canvas { max-height: 200px; }
-
-  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; }
-  .table-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
-  .table-header h3 { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-  .table-scroll { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 10px 16px; color: var(--dim); font-weight: 400; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  td { padding: 11px 16px; border-bottom: 1px solid var(--border); color: var(--text); }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--surface2); }
-  td a { color: var(--blue); text-decoration: none; font-size: 12px; }
-  td a:hover { text-decoration: underline; }
-
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
-  .badge-green { background: var(--green-bg); color: var(--green); }
-  .badge-red { background: var(--red-bg); color: var(--red); }
-  .badge-amber { background: var(--amber-bg); color: var(--amber); }
-  .badge-blue { background: var(--blue-bg); color: var(--blue); }
-
-  .eval-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; }
-  .eval-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-  .eval-church { font-weight: 500; font-size: 15px; }
-  .eval-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
-  .eval-score { font-family: 'DM Mono', monospace; font-size: 20px; color: var(--gold); }
-  .eval-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-  .eval-row { display: flex; align-items: center; gap: 8px; }
-  .eval-row-label { font-size: 11px; color: var(--muted); width: 80px; flex-shrink: 0; }
-  .bar-bg { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; }
-  .bar-fill { height: 100%; border-radius: 2px; background: var(--gold); }
-  .bar-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--dim); width: 14px; text-align: right; }
-  .eval-note { font-size: 13px; color: var(--muted); margin-top: 8px; font-style: italic; }
-  .eval-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-  .eval-tag { font-size: 11px; background: var(--surface2); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; color: var(--muted); }
-
-  .contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-  .contact-name { font-weight: 500; font-size: 15px; }
-  .contact-meta { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.6; }
-  .contact-interests { font-size: 11px; color: var(--blue); margin-top: 6px; }
-  .contact-right { text-align: right; flex-shrink: 0; }
-  .contact-photo { font-size: 12px; color: var(--green); }
-
-  .log-item { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
-  .log-item:last-child { border-bottom: none; }
-  .log-time { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--dim); white-space: nowrap; min-width: 100px; }
-  .log-desc { font-size: 13px; }
-
-  .last-updated { font-size: 11px; color: var(--dim); margin-bottom: 16px; }
-  .empty { text-align: center; padding: 32px; color: var(--dim); font-size: 13px; }
-  .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
-  .spinner { width: 28px; height: 28px; border: 2px solid var(--border2); border-top-color: var(--text); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  @media (max-width: 600px) { .chart-row { grid-template-columns: 1fr; } .eval-grid { grid-template-columns: 1fr; } .contact-card { flex-direction: column; } }
-  .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
-  .lightbox.show { display:flex; }
-  .lightbox img { max-width:92vw; max-height:80vh; border-radius:8px; object-fit:contain; box-shadow:0 8px 40px rgba(0,0,0,0.6); }
-  .lightbox-close { position:fixed; top:20px; right:20px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#fff; border-radius:50%; width:40px; height:40px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:'Montserrat',sans-serif; transition:background 0.2s; }
-  .lightbox-close:hover { background:rgba(255,255,255,0.3); }
-  .lightbox-label { color:rgba(255,255,255,0.5); font-size:12px; font-family:'Montserrat',sans-serif; }
-  .export-btn { background: var(--surface2); border: 1px solid var(--border2); color: var(--muted); padding: 5px 12px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.2s; letter-spacing: 0.04em; }
-  .export-btn:hover { border-color: var(--gold); color: var(--gold); }
-  .view-link { color:var(--blue); text-decoration:none; cursor:pointer; font-size:12px; }
-  .view-link:hover { text-decoration:underline; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #2a2a2a; --surface: #333; --surface2: #3d3d3d;
+  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.16);
+  --text: #f0ede8; --muted: #9a9590; --dim: #5a5550;
+  --gold: #f7b214; --gold-bg: rgba(247,178,20,0.12);
+  --green: #2ECC8A; --green-bg: rgba(46,204,138,0.1);
+  --red: #E05555; --red-bg: rgba(224,85,85,0.1);
+  --blue: #7BAFF8; --blue-bg: rgba(123,175,248,0.1);
+  --radius: 10px; --radius-sm: 6px;
+}
+body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 3px solid var(--gold); background: var(--bg); }
+.topbar h1 { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+.topbar h1 span { color: var(--gold); }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.live-badge { display: flex; align-items: center; gap: 6px; background: var(--gold-bg); border: 1px solid rgba(247,178,20,0.3); padding: 5px 12px; border-radius: 20px; font-size: 12px; color: var(--gold); font-weight: 500; }
+.live-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.refresh-btn { background: var(--surface); border: 1px solid var(--border2); color: var(--muted); padding: 6px 14px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 13px; cursor: pointer; }
+.refresh-btn:hover { color: var(--text); border-color: var(--gold); }
+.filter-bar { display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.filter-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.filter-btn { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; font-family: 'Montserrat', sans-serif; cursor: pointer; border: 1px solid var(--border2); background: transparent; color: var(--muted); transition: all 0.2s; }
+.filter-btn.active { background: var(--surface2); border-color: var(--gold); color: var(--gold); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 24px; overflow-x: auto; }
+.tab { padding: 12px 18px; font-size: 13px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.panel { display: none; padding: 24px; }
+.panel.active { display: block; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+.metric-value { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; }
+.metric-value.green { color: var(--green); }
+.metric-value.red { color: var(--red); }
+.metric-value.gold { color: var(--gold); }
+.metric-value.blue { color: var(--blue); }
+.metric-sub { font-size: 11px; color: var(--dim); margin-top: 4px; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.chart-title { font-size: 11px; color: var(--muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.06em; }
+.chart-wrap canvas { max-height: 200px; }
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; }
+.table-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.table-head h3 { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+.export-btn { background: var(--surface2); border: 1px solid var(--border2); color: var(--muted); padding: 5px 12px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; }
+.export-btn:hover { border-color: var(--gold); color: var(--gold); }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 16px; color: var(--dim); font-weight: 400; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 11px 16px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+td a, .view-link { color: var(--blue); text-decoration: none; cursor: pointer; font-size: 12px; }
+td a:hover, .view-link:hover { text-decoration: underline; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.badge-green { background: var(--green-bg); color: var(--green); }
+.badge-gold { background: var(--gold-bg); color: var(--gold); }
+.badge-blue { background: var(--blue-bg); color: var(--blue); }
+.eval-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; }
+.eval-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.eval-church { font-weight: 500; font-size: 15px; }
+.eval-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.eval-score { font-family: 'DM Mono', monospace; font-size: 20px; color: var(--gold); }
+.bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.bar-label { font-size: 11px; color: var(--muted); width: 80px; flex-shrink: 0; }
+.bar-bg { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; }
+.bar-fill { height: 100%; border-radius: 2px; background: var(--gold); }
+.bar-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--dim); width: 14px; }
+.contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+.contact-name { font-weight: 500; font-size: 15px; margin-bottom: 4px; }
+.contact-meta { font-size: 12px; color: var(--muted); line-height: 1.7; }
+.contact-interests { font-size: 11px; color: var(--blue); margin-top: 6px; }
+.log-item { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.log-item:last-child { border-bottom: none; }
+.log-time { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--dim); white-space: nowrap; min-width: 90px; }
+.empty { text-align: center; padding: 32px; color: var(--dim); font-size: 13px; }
+.spinner { width: 28px; height: 28px; border: 2px solid var(--border2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+.error-msg { color: var(--red); font-size: 13px; padding: 20px; text-align: center; }
+.lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+.lightbox.show { display: flex; }
+.lightbox img { max-width: 92vw; max-height: 80vh; border-radius: 8px; object-fit: contain; }
+.lightbox-close { position: fixed; top: 20px; right: 20px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: 'Montserrat', sans-serif; }
+@media (max-width: 600px) { .chart-row { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -131,424 +102,325 @@
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0YQJy7Ea4w0sUIo4kvYaaei407FxBMPlUgPrwLtirI2aoL4fk/exec";
 </script>
 
-<div id="debug-banner" style="display:block;background:#E05555;color:#fff;padding:10px 16px;font-size:13px;font-family:Montserrat,sans-serif;position:fixed;top:0;left:0;right:0;z-index:9999">Page loaded — JS starting...</div>
-<div class="topbar" style="margin-top:0" id="main-topbar">
-  <div class="topbar-left">
-    <h1><span style="color:var(--gold)">P</span>BC Tour Dashboard</h1>
-    <p>Sponsor & Treasurer view</p>
-  </div>
+<div class="topbar">
+  <h1><span>P</span>BC Tour Dashboard</h1>
   <div class="topbar-right">
     <div class="live-badge"><div class="live-dot"></div> Live</div>
-    <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    <button class="refresh-btn" onclick="loadData()">&#8635; Refresh</button>
   </div>
-</div>
-
-<div class="tabs">
-  <div class="tab active" onclick="switchTab('finances', this)">💰 Finances</div>
-  <div class="tab" onclick="switchTab('income', this)">📥 Income</div>
-  <div class="tab" onclick="switchTab('evaluations', this)">🏛️ Evaluations</div>
-  <div class="tab" onclick="switchTab('contacts', this)">📋 Contacts</div>
-  <div class="tab" onclick="switchTab('log', this)">📋 Log</div>
 </div>
 
 <div class="filter-bar">
   <span class="filter-label">Viewing:</span>
-  <button class="filter-btn active" id="f-all" onclick="setFilter('all')">All Groups</button>
-  <button class="filter-btn mens" id="f-mens" onclick="setFilter('mens')">🏃 Men's</button>
-  <button class="filter-btn ladies" id="f-ladies" onclick="setFilter('ladies')">👩 Ladies'</button>
+  <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+  <button class="filter-btn" onclick="setFilter('mens', this)">Men's</button>
+  <button class="filter-btn" onclick="setFilter('ladies', this)">Ladies'</button>
 </div>
 
-<!-- FINANCES -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('finances', this)">Finances</div>
+  <div class="tab" onclick="switchTab('income', this)">Income</div>
+  <div class="tab" onclick="switchTab('evaluations', this)">Evaluations</div>
+  <div class="tab" onclick="switchTab('contacts', this)">Contacts</div>
+  <div class="tab" onclick="switchTab('log', this)">Log</div>
+</div>
+
 <div class="panel active" id="panel-finances">
-  <div id="fin-loading" class="loading"><div class="spinner"></div>Loading…</div>
-  <div id="fin-content" style="display:none">
-    <div class="last-updated" id="fin-updated"></div>
-    <div class="metrics" id="fin-metrics"></div>
-    <div class="chart-row">
-      <div class="chart-wrap"><div class="chart-title">Spending by category</div><canvas id="chart-cat"></canvas></div>
-      <div class="chart-wrap"><div class="chart-title">Expenses by date</div><canvas id="chart-date"></canvas></div>
-    </div>
-    <div class="table-wrap">
-      <div class="table-header"><h3>All Expenses</h3><button class="export-btn" onclick="exportCSV('expenses')">↓ Export CSV</button></div>
-      <div class="table-scroll">
-        <table><thead><tr><th>Date</th><th>Amount</th><th>Category</th><th>Submitted By</th><th>Receipt</th></tr></thead>
-        <tbody id="fin-tbody"></tbody></table>
-      </div>
-    </div>
-  </div>
+  <div id="fin-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
 </div>
-
-<!-- INCOME -->
 <div class="panel" id="panel-income">
-  <div id="inc-loading" class="loading"><div class="spinner"></div>Loading…</div>
-  <div id="inc-content" style="display:none">
-    <div class="last-updated" id="inc-updated"></div>
-    <div class="metrics" id="inc-metrics"></div>
-    <div class="table-wrap">
-      <div class="table-header"><h3>All Income</h3><button class="export-btn" onclick="exportCSV('income')">↓ Export CSV</button></div>
-      <div class="table-scroll">
-        <table><thead><tr><th>Date</th><th>Church</th><th>Amount</th><th>Category</th><th>Type</th><th>Submitted By</th></tr></thead>
-        <tbody id="inc-tbody"></tbody></table>
-      </div>
-    </div>
-  </div>
+  <div id="inc-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
 </div>
-
-<!-- EVALUATIONS -->
 <div class="panel" id="panel-evaluations">
-  <div id="eval-loading" class="loading"><div class="spinner"></div>Loading…</div>
-  <div id="eval-content" style="display:none">
-    <div class="last-updated" id="eval-updated"></div>
-    <div class="metrics" id="eval-metrics"></div>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="export-btn" onclick="exportCSV('evaluations')">↓ Export CSV</button></div>
-  <div id="eval-cards"></div>
-  </div>
+  <div id="eval-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
 </div>
-
-<!-- CONTACTS -->
 <div class="panel" id="panel-contacts">
-  <div id="con-loading" class="loading"><div class="spinner"></div>Loading…</div>
-  <div id="con-content" style="display:none">
-    <div class="last-updated" id="con-updated"></div>
-    <div class="metrics" id="con-metrics"></div>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="export-btn" onclick="exportCSV('contacts')">↓ Export CSV</button></div>
-  <div id="con-cards"></div>
-  </div>
+  <div id="con-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+</div>
+<div class="panel" id="panel-log">
+  <div id="log-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
 </div>
 
-<!-- LOG -->
-<div class="panel" id="panel-log">
-  <div id="log-loading" class="loading"><div class="spinner"></div>Loading…</div>
-  <div id="log-content" style="display:none">
-    <div class="table-wrap" style="padding:16px 20px"><div id="log-items"></div></div>
-  </div>
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <button class="lightbox-close" onclick="closeLightbox()">x</button>
+  <img id="lightbox-img" src="" alt="Preview">
 </div>
 
 <script>
-let chartCat=null, chartDate=null, cachedData=null, activeFilter='all';
+var cachedData = null;
+var activeFilter = 'all';
+var chartCat = null;
+var chartDate = null;
 
-function setFilter(f) {
+function setFilter(f, btn) {
   activeFilter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('f-' + f).classList.add('active');
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
   if (cachedData) renderAll(cachedData);
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
 }
 
 function filterRows(rows) {
   if (activeFilter === 'all') return rows;
-  return rows.filter(r => {
-    const g = (r['Tour Group'] || '').toLowerCase();
-    return activeFilter === 'mens' ? g === 'mens' || g === '' : g === 'ladies';
+  return rows.filter(function(r) {
+    var g = (r['Tour Group'] || '').toLowerCase();
+    return activeFilter === 'mens' ? (g === 'mens' || g === '') : g === 'ladies';
   });
 }
 
-function switchTab(name, el) {
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('panel-'+name).classList.add('active');
-  if(cachedData) renderAll(cachedData);
+function fmtDate(val) {
+  if (!val) return '-';
+  var d = new Date(val);
+  return isNaN(d) ? String(val).split('T')[0] : d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
 }
 
-async function loadData() {
-  showLoading();
-  showError('Step 1: Starting fetch...');
-  try {
-    const resp = await fetch(SCRIPT_URL + '?t=' + Date.now(), {
-      method: 'GET',
-      redirect: 'follow',
-      mode: 'cors'
+function fmtTime(val) {
+  if (!val) return '-';
+  var d = new Date(val);
+  return isNaN(d) ? '-' : d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+}
+
+function driveUrl(url) {
+  if (!url) return url;
+  var m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (m) return 'https://drive.google.com/uc?export=view&id=' + m[1];
+  var m2 = url.match(/id=([a-zA-Z0-9_-]+)/);
+  if (m2) return 'https://drive.google.com/uc?export=view&id=' + m2[1];
+  return url;
+}
+
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = driveUrl(url);
+  document.getElementById('lightbox').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox(e) {
+  if (e && e.target !== document.getElementById('lightbox') && !e.target.classList.contains('lightbox-close')) return;
+  document.getElementById('lightbox').classList.remove('show');
+  document.getElementById('lightbox-img').src = '';
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { document.getElementById('lightbox').classList.remove('show'); document.body.style.overflow = ''; }
+});
+
+function loadData() {
+  fetch(SCRIPT_URL)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      cachedData = data;
+      renderAll(data);
+    })
+    .catch(function(err) {
+      document.getElementById('fin-body').innerHTML = '<div class="error-msg">Error: ' + err.message + '</div>';
     });
-    showError('Step 2: Got response, status: ' + resp.status);
-    if (!resp.ok) { showError('HTTP error: ' + resp.status); return; }
-    const text = await resp.text();
-    showError('Step 3: Got text, length: ' + text.length + ', preview: ' + text.slice(0, 100));
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch(e) {
-      showError('Parse error — response was: ' + text.slice(0, 200));
-      return;
-    }
-    showError('Step 4: Parsed OK, keys: ' + Object.keys(data).join(', '));
-    if (data.error) { showError(data.error); return; }
-    cachedData = data;
-    renderAll(data);
-  } catch(err) {
-    showError('Network error: ' + err.message);
-  }
-}
-
-function showLoading() {
-  const banner = document.getElementById('debug-banner');
-  banner.style.display = 'block';
-  banner.textContent = 'showLoading called — fetch starting...';
-  document.querySelectorAll('[id$="-loading"]').forEach(el => {
-    el.style.display = 'block';
-    el.innerHTML = '<div class="spinner"></div>Loading…';
-  });
-  document.querySelectorAll('[id$="-content"]').forEach(el => el.style.display = 'none');
-}
-
-function handleData(data) {
-  if (data.error) { showError('Script error: ' + data.error); return; }
-  cachedData = data;
-  renderAll(data);
-}
-
-function showError(msg) {
-  const banner = document.getElementById('debug-banner');
-  banner.style.display = 'block';
-  banner.textContent = msg;
-  document.getElementById('main-topbar').style.marginTop = '40px';
-  document.querySelectorAll('[id$="-loading"]').forEach(el => {
-    el.innerHTML = '<div style="color:var(--red);font-size:13px;padding:20px">⚠️ ' + msg + '</div>';
-  });
-  console.error(msg);
 }
 
 function renderAll(data) {
-  renderFinances(data.expenses || []);
-  renderIncome(data.income || []);
-  renderEvaluations(data.evaluations || []);
-  renderContacts(data.infocards || []);
-  renderLog(data.log || []);
+  renderFinances(filterRows(data.expenses || []));
+  renderIncome(filterRows(data.income || []));
+  renderEvaluations(filterRows(data.evaluations || []));
+  renderContacts(filterRows(data.infocards || []));
+  renderLog(filterRows(data.log || []));
 }
 
-// ── FINANCES ──
 function renderFinances(rows) {
-  rows = filterRows(rows);
-  document.getElementById('fin-loading').style.display='none';
-  document.getElementById('fin-content').style.display='block';
-  document.getElementById('fin-updated').textContent='Last updated: '+new Date().toLocaleTimeString();
+  var total = rows.reduce(function(s, r) { return s + (parseFloat(r['Amount ($)']) || 0); }, 0);
+  var cats = {};
+  rows.forEach(function(r) { var c = r['Category'] || 'Other'; cats[c] = (cats[c] || 0) + (parseFloat(r['Amount ($)']) || 0); });
+  var catKeys = Object.keys(cats);
+  var colors = ['#f7b214','#2ECC8A','#7BAFF8','#E05555','#A78BFA','#F472B6'];
 
-  const total = rows.reduce((s,r)=>s+(parseFloat(r['Amount ($)'])||0),0);
-  const cats = {};
-  rows.forEach(r=>{ const c=r['Category']||'Other'; cats[c]=(cats[c]||0)+(parseFloat(r['Amount ($)'])||0); });
+  var html = '<div class="metrics">';
+  html += '<div class="metric"><div class="metric-label">Total Expenses</div><div class="metric-value red">$' + total.toFixed(2) + '</div><div class="metric-sub">' + rows.length + ' records</div></div>';
+  html += '<div class="metric"><div class="metric-label">Categories</div><div class="metric-value blue">' + catKeys.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Avg per Entry</div><div class="metric-value gold">' + (rows.length ? '$' + (total / rows.length).toFixed(2) : '-') + '</div></div>';
+  html += '</div>';
 
-  document.getElementById('fin-metrics').innerHTML=`
-    <div class="metric"><div class="metric-label">Total Expenses</div><div class="metric-value red">$${total.toFixed(2)}</div><div class="metric-sub">${rows.length} records</div></div>
-    <div class="metric"><div class="metric-label">Categories</div><div class="metric-value blue">${Object.keys(cats).length}</div></div>
-    <div class="metric"><div class="metric-label">Avg per Entry</div><div class="metric-value amber">${rows.length?'$'+(total/rows.length).toFixed(2):'—'}</div></div>
-  `;
+  html += '<div class="chart-row">';
+  html += '<div class="chart-wrap"><div class="chart-title">By category</div><canvas id="chart-cat"></canvas></div>';
+  html += '<div class="chart-wrap"><div class="chart-title">By date</div><canvas id="chart-date"></canvas></div>';
+  html += '</div>';
 
-  const catKeys=Object.keys(cats);
-  const colors=['#E8A020','#2ECC8A','#5B9CF6','#E05555','#A78BFA','#F472B6','#34D399'];
-  if(chartCat) chartCat.destroy();
-  chartCat=new Chart(document.getElementById('chart-cat').getContext('2d'),{
-    type:'doughnut',
-    data:{labels:catKeys,datasets:[{data:catKeys.map(c=>cats[c].toFixed(2)),backgroundColor:colors.slice(0,catKeys.length),borderWidth:0}]},
-    options:{plugins:{legend:{position:'bottom',labels:{color:'#7A766D',font:{size:11},boxWidth:10,padding:10}}},cutout:'65%'}
-  });
+  html += '<div class="table-wrap"><div class="table-head"><h3>All Expenses</h3><button class="export-btn" onclick="exportCSV(\'expenses\')">Export CSV</button></div><div class="table-scroll"><table><thead><tr><th>Date</th><th>Amount</th><th>Category</th><th>Submitted By</th><th>Receipt</th></tr></thead><tbody>';
+  if (!rows.length) {
+    html += '<tr><td colspan="5" class="empty">No expenses yet</td></tr>';
+  } else {
+    rows.slice().reverse().forEach(function(r) {
+      var amt = parseFloat(r['Amount ($)']) || 0;
+      var link = r['Receipt Link'] && r['Receipt Link'].indexOf('http') === 0 ? '<span class="view-link" onclick="openLightbox(\'' + r['Receipt Link'] + '\')">View</span>' : '-';
+      html += '<tr><td style="font-family:\'DM Mono\',monospace;font-size:12px">' + fmtDate(r['Expense Date']) + '</td><td style="color:var(--red);font-family:\'DM Mono\',monospace">$' + amt.toFixed(2) + '</td><td><span class="badge badge-gold">' + (r['Category'] || '-') + '</span></td><td style="color:var(--muted)">' + (r['Submitted By'] || '-') + '</td><td>' + link + '</td></tr>';
+    });
+  }
+  html += '</tbody></table></div></div>';
+  document.getElementById('fin-body').innerHTML = html;
 
-  const byDate={};
-  rows.forEach(r=>{ const d=fmtDateShort(r['Expense Date']); byDate[d]=(byDate[d]||0)+(parseFloat(r['Amount ($)'])||0); });
-  const dates=Object.keys(byDate).sort();
-  if(chartDate) chartDate.destroy();
-  chartDate=new Chart(document.getElementById('chart-date').getContext('2d'),{
-    type:'bar',
-    data:{labels:dates,datasets:[{data:dates.map(d=>byDate[d].toFixed(2)),backgroundColor:'rgba(232,160,32,0.75)',borderRadius:4}]},
-    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#4A4740',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#4A4740',font:{size:10},callback:v=>'$'+v},grid:{color:'rgba(255,255,255,0.04)'}}}}
-  });
+  if (chartCat) chartCat.destroy();
+  if (catKeys.length) {
+    chartCat = new Chart(document.getElementById('chart-cat').getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: catKeys, datasets: [{ data: catKeys.map(function(c) { return cats[c].toFixed(2); }), backgroundColor: colors.slice(0, catKeys.length), borderWidth: 0 }] },
+      options: { plugins: { legend: { position: 'bottom', labels: { color: '#7A766D', font: { size: 11 }, boxWidth: 10, padding: 10 } } }, cutout: '65%' }
+    });
+  }
 
-  const tbody=document.getElementById('fin-tbody');
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--dim);padding:24px">No expenses yet</td></tr>';return;}
-  tbody.innerHTML=rows.slice().reverse().map(r=>{
-    const link=r['Receipt Link']&&r['Receipt Link'].startsWith('http')?`<span class="view-link" onclick="openLightbox('${r['Receipt Link']}','Receipt')">View →</span>`:'<span style="color:var(--dim)">None</span>';
-    return`<tr><td style="font-family:'DM Mono',monospace;font-size:12px">${fmtDate(r['Expense Date'])}</td><td style="color:var(--red);font-family:'DM Mono',monospace">$${(parseFloat(r['Amount ($)'])||0).toFixed(2)}</td><td><span class="badge badge-amber">${r['Category']||'—'}</span></td><td style="color:var(--muted)">${r['Submitted By']||'—'}</td><td>${link}</td></tr>`;
-  }).join('');
+  var byDate = {};
+  rows.forEach(function(r) { var d = String(r['Expense Date']).split('T')[0]; byDate[d] = (byDate[d] || 0) + (parseFloat(r['Amount ($)']) || 0); });
+  var dates = Object.keys(byDate).sort();
+  if (chartDate) chartDate.destroy();
+  if (dates.length) {
+    chartDate = new Chart(document.getElementById('chart-date').getContext('2d'), {
+      type: 'bar',
+      data: { labels: dates, datasets: [{ data: dates.map(function(d) { return byDate[d].toFixed(2); }), backgroundColor: 'rgba(247,178,20,0.75)', borderRadius: 4 }] },
+      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#4A4740', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#4A4740', font: { size: 10 }, callback: function(v) { return '$' + v; } }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+    });
+  }
 }
 
-// ── INCOME ──
 function renderIncome(rows) {
-  rows = filterRows(rows);
-  document.getElementById('inc-loading').style.display='none';
-  document.getElementById('inc-content').style.display='block';
-  document.getElementById('inc-updated').textContent='Last updated: '+new Date().toLocaleTimeString();
+  var total = rows.reduce(function(s, r) { return s + (parseFloat(r['Amount ($)']) || 0); }, 0);
+  var byType = {};
+  rows.forEach(function(r) { var t = r['Income Type'] || 'Other'; byType[t] = (byType[t] || 0) + (parseFloat(r['Amount ($)']) || 0); });
 
-  const total=rows.reduce((s,r)=>s+(parseFloat(r['Amount ($)'])||0),0);
-  const byType={};
-  rows.forEach(r=>{ const t=r['Income Type']||'Other'; byType[t]=(byType[t]||0)+(parseFloat(r['Amount ($)'])||0); });
+  var html = '<div class="metrics">';
+  html += '<div class="metric"><div class="metric-label">Total Income</div><div class="metric-value green">$' + total.toFixed(2) + '</div><div class="metric-sub">' + rows.length + ' entries</div></div>';
+  html += '<div class="metric"><div class="metric-label">Cash</div><div class="metric-value gold">$' + (byType['Cash'] || 0).toFixed(2) + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Check</div><div class="metric-value blue">$' + (byType['Check'] || 0).toFixed(2) + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Card</div><div class="metric-value blue">$' + (byType['Card'] || 0).toFixed(2) + '</div></div>';
+  html += '</div>';
 
-  document.getElementById('inc-metrics').innerHTML=`
-    <div class="metric"><div class="metric-label">Total Income</div><div class="metric-value green">$${total.toFixed(2)}</div><div class="metric-sub">${rows.length} entries</div></div>
-    <div class="metric"><div class="metric-label">Cash</div><div class="metric-value amber">$${(byType['Cash']||0).toFixed(2)}</div></div>
-    <div class="metric"><div class="metric-label">Check</div><div class="metric-value blue">$${(byType['Check']||0).toFixed(2)}</div></div>
-    <div class="metric"><div class="metric-label">Card</div><div class="metric-value" style="color:var(--blue)">$${(byType['Card']||0).toFixed(2)}</div></div>
-    <div class="metric"><div class="metric-label">Digital</div><div class="metric-value" style="color:var(--green)">$${(byType['Venmo / Digital']||0).toFixed(2)}</div></div>
-  `;
-
-  const tbody=document.getElementById('inc-tbody');
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:24px">No income yet</td></tr>';return;}
-  tbody.innerHTML=rows.slice().reverse().map(r=>`
-    <tr>
-      <td style="font-family:'DM Mono',monospace;font-size:12px">${fmtDate(r['Income Date'])}</td>
-      <td style="color:var(--muted);font-size:12px">${r['Church Name / City / State']||'—'}</td>
-      <td style="color:var(--green);font-family:'DM Mono',monospace">$${(parseFloat(r['Amount ($)'])||0).toFixed(2)}</td>
-      <td><span class="badge badge-green">${r['Income Category']||'—'}</span></td>
-      <td style="color:var(--muted)">${r['Income Type']||'—'}</td>
-      <td style="color:var(--muted)">${r['Submitted By']||'—'}</td>
-    </tr>
-  `).join('');
+  html += '<div class="table-wrap"><div class="table-head"><h3>All Income</h3><button class="export-btn" onclick="exportCSV(\'income\')">Export CSV</button></div><div class="table-scroll"><table><thead><tr><th>Date</th><th>Church</th><th>Amount</th><th>Category</th><th>Type</th><th>Submitted By</th></tr></thead><tbody>';
+  if (!rows.length) {
+    html += '<tr><td colspan="6" class="empty">No income yet</td></tr>';
+  } else {
+    rows.slice().reverse().forEach(function(r) {
+      var amt = parseFloat(r['Amount ($)']) || 0;
+      html += '<tr><td style="font-family:\'DM Mono\',monospace;font-size:12px">' + fmtDate(r['Income Date']) + '</td><td style="color:var(--muted);font-size:12px">' + (r['Church Name / City / State'] || '-') + '</td><td style="color:var(--green);font-family:\'DM Mono\',monospace">$' + amt.toFixed(2) + '</td><td><span class="badge badge-green">' + (r['Income Category'] || '-') + '</span></td><td style="color:var(--muted)">' + (r['Income Type'] || '-') + '</td><td style="color:var(--muted)">' + (r['Submitted By'] || '-') + '</td></tr>';
+    });
+  }
+  html += '</tbody></table></div></div>';
+  document.getElementById('inc-body').innerHTML = html;
 }
 
-// ── EVALUATIONS ──
 function renderEvaluations(rows) {
-  rows = filterRows(rows);
-  document.getElementById('eval-loading').style.display='none';
-  document.getElementById('eval-content').style.display='block';
-  document.getElementById('eval-updated').textContent='Last updated: '+new Date().toLocaleTimeString();
+  var ratings = rows.map(function(r) { return parseFloat(r['Soul-Winning Rating (1-5)']) || 0; }).filter(function(n) { return n > 0; });
+  var avg = ratings.length ? (ratings.reduce(function(a, b) { return a + b; }, 0) / ratings.length).toFixed(1) : '-';
 
-  const ratings=rows.map(r=>parseFloat(r['Soul-Winning Rating (1-5)'])||0).filter(n=>n>0);
-  const avgRating=ratings.length?(ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1):'—';
+  var html = '<div class="metrics">';
+  html += '<div class="metric"><div class="metric-label">Churches</div><div class="metric-value blue">' + rows.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Avg Soul-Winning</div><div class="metric-value gold">' + avg + '</div><div class="metric-sub">out of 5</div></div>';
+  html += '<div class="metric"><div class="metric-label">PBC Connections</div><div class="metric-value green">' + rows.filter(function(r) { return r['PBC Connections'] === 'Yes'; }).length + '</div></div>';
+  html += '</div>';
+  html += '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="export-btn" onclick="exportCSV(\'evaluations\')">Export CSV</button></div>';
 
-  document.getElementById('eval-metrics').innerHTML=`
-    <div class="metric"><div class="metric-label">Churches Visited</div><div class="metric-value blue">${rows.length}</div></div>
-    <div class="metric"><div class="metric-label">Avg Soul-Winning</div><div class="metric-value amber">${avgRating}</div><div class="metric-sub">out of 5</div></div>
-    <div class="metric"><div class="metric-label">PBC Connections</div><div class="metric-value green">${rows.filter(r=>r['PBC Connections']==='Yes').length}</div></div>
-  `;
-
-  const container=document.getElementById('eval-cards');
-  if(!rows.length){container.innerHTML='<div class="empty">No evaluations yet</div>';return;}
-  container.innerHTML=rows.slice().reverse().map(r=>{
-    const sw=parseFloat(r['Soul-Winning Rating (1-5)'])||0;
-    const rec=parseFloat(r['Recommend Returning (0-5)'])||0;
-    const provided=(r['Provided by Church']||'').split(',').map(s=>s.trim()).filter(Boolean);
-    return`<div class="eval-card">
-      <div class="eval-top">
-        <div>
-          <div class="eval-church">${r['Church Name / City / State']||'Unknown'}${r['Tour Group']?` <span style="font-size:11px;padding:2px 7px;border-radius:4px;background:${r['Tour Group']==='ladies'?'var(--gold-bg)':'var(--surface2)'};color:${r['Tour Group']==='ladies'?'var(--gold)':'var(--blue)'};font-weight:500;vertical-align:middle">${r['Tour Group']}</span>`:''}</div>
-          <div class="eval-meta">${fmtDate(r['Visit Date'])} · Pastor ${r['Pastor Name']||'—'}${r['Submitted By']?` · <span style="color:var(--gold)">${r['Submitted By']}</span>`:''}</div>
-        </div>
-        <div class="eval-score">${sw||'—'}/5</div>
-      </div>
-      <div class="eval-grid">
-        <div class="eval-row"><div class="eval-row-label">Soul-winning</div><div class="bar-bg"><div class="bar-fill" style="width:${sw/5*100}%"></div></div><div class="bar-num">${sw||'—'}</div></div>
-        <div class="eval-row"><div class="eval-row-label">Recommend</div><div class="bar-bg"><div class="bar-fill" style="width:${rec/5*100}%;background:var(--blue)"></div></div><div class="bar-num">${rec||'—'}</div></div>
-      </div>
-      <div class="eval-row" style="margin-bottom:8px"><div class="eval-row-label">Teenagers</div><span style="font-size:13px">${r['Teenagers in Attendance (est.)']||'—'}</span></div>
-      ${r['PBC Connections']==='Yes'?`<div style="font-size:12px;color:var(--green);margin-bottom:6px">✓ PBC connection — ${r['PBC Connection Details']||''}</div>`:''}
-      ${provided.length?`<div class="eval-tags">${provided.map(p=>`<span class="eval-tag">${p}</span>`).join('')}</div>`:''}
-      ${r['Notes for Future Visits']?`<div class="eval-note">"${r['Notes for Future Visits']}"</div>`:''}
-    </div>`;
-  }).join('');
+  if (!rows.length) {
+    html += '<div class="empty">No evaluations yet</div>';
+  } else {
+    rows.slice().reverse().forEach(function(r) {
+      var sw = parseFloat(r['Soul-Winning Rating (1-5)']) || 0;
+      var rec = parseFloat(r['Recommend Returning (0-5)']) || 0;
+      var provided = (r['Provided by Church'] || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+      html += '<div class="eval-card">';
+      html += '<div class="eval-top"><div><div class="eval-church">' + (r['Church Name / City / State'] || 'Unknown') + '</div><div class="eval-meta">' + fmtDate(r['Visit Date']) + ' · Pastor ' + (r['Pastor Name'] || '-') + (r['Submitted By'] ? ' · <span style="color:var(--gold)">' + r['Submitted By'] + '</span>' : '') + '</div></div><div class="eval-score">' + (sw || '-') + '/5</div></div>';
+      html += '<div class="bar-row"><div class="bar-label">Soul-winning</div><div class="bar-bg"><div class="bar-fill" style="width:' + (sw / 5 * 100) + '%"></div></div><div class="bar-num">' + (sw || '-') + '</div></div>';
+      html += '<div class="bar-row"><div class="bar-label">Recommend</div><div class="bar-bg"><div class="bar-fill" style="width:' + (rec / 5 * 100) + '%;background:var(--blue)"></div></div><div class="bar-num">' + (rec || '-') + '</div></div>';
+      if (r['Teenagers in Attendance (est.)']) html += '<div style="font-size:12px;color:var(--muted);margin-top:8px">Teenagers: ' + r['Teenagers in Attendance (est.)'] + '</div>';
+      if (r['PBC Connections'] === 'Yes') html += '<div style="font-size:12px;color:var(--green);margin-top:4px">PBC connection: ' + (r['PBC Connection Details'] || '') + '</div>';
+      if (provided.length) html += '<div style="font-size:12px;color:var(--muted);margin-top:4px">Provided: ' + provided.join(', ') + '</div>';
+      if (r['Notes for Future Visits']) html += '<div style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic">' + r['Notes for Future Visits'] + '</div>';
+      html += '</div>';
+    });
+  }
+  document.getElementById('eval-body').innerHTML = html;
 }
 
-// ── CONTACTS ──
 function renderContacts(rows) {
-  rows = filterRows(rows);
-  document.getElementById('con-loading').style.display='none';
-  document.getElementById('con-content').style.display='block';
-  document.getElementById('con-updated').textContent='Last updated: '+new Date().toLocaleTimeString();
+  var visiting = rows.filter(function(r) { return (r['Interests'] || '').indexOf('visiting') > -1; }).length;
+  var applying = rows.filter(function(r) { return (r['Interests'] || '').indexOf('applying') > -1; }).length;
 
-  const visiting=rows.filter(r=>(r['Interests']||'').includes('visiting')).length;
-  const applying=rows.filter(r=>(r['Interests']||'').includes('applying')).length;
+  var html = '<div class="metrics">';
+  html += '<div class="metric"><div class="metric-label">Total Contacts</div><div class="metric-value blue">' + rows.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Want to Visit</div><div class="metric-value gold">' + visiting + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Want to Apply</div><div class="metric-value green">' + applying + '</div></div>';
+  html += '</div>';
+  html += '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="export-btn" onclick="exportCSV(\'contacts\')">Export CSV</button></div>';
 
-  document.getElementById('con-metrics').innerHTML=`
-    <div class="metric"><div class="metric-label">Total Contacts</div><div class="metric-value blue">${rows.length}</div></div>
-    <div class="metric"><div class="metric-label">Want to Visit</div><div class="metric-value amber">${visiting}</div></div>
-    <div class="metric"><div class="metric-label">Want to Apply</div><div class="metric-value green">${applying}</div></div>
-  `;
-
-  const container=document.getElementById('con-cards');
-  if(!rows.length){container.innerHTML='<div class="empty">No interest cards yet</div>';return;}
-  container.innerHTML=rows.slice().reverse().map(r=>{
-    const hasPhoto=r['Interest Form Photo Link']&&r['Interest Form Photo Link'].startsWith('http');
-    return`<div class="contact-card">
-      <div>
-        <div class="contact-name">${r['First Name']||''} ${r['Last Name']||''} <span style="font-size:12px;color:var(--muted);font-weight:400">${r['Gender']||''}</span>${r['Tour Group']?`<span style="font-size:10px;margin-left:6px;padding:2px 7px;border-radius:4px;background:${r['Tour Group']==='ladies'?'var(--gold-bg)':'var(--surface2)'};color:${r['Tour Group']==='ladies'?'var(--gold)':'var(--blue)'};font-weight:500">${r['Tour Group']}</span>`:''}</div>
-        <div class="contact-meta">
-          ${r['Email']||''} · ${r['Phone']||''}<br>
-          ${[r['City'],r['State'],r['Zip']].filter(Boolean).join(', ')}<br>
-          ${r['Church Name / City / State']||''} · Pastor ${r['Pastor Name']||'—'}<br>
-          Grad ${r['HS Grad Year']||'—'} · DOB ${fmtDate(r['Date of Birth'])}
-        </div>
-        ${r['Interests']?`<div class="contact-interests">↪ ${r['Interests']}</div>`:''}
-        ${r['Majors of Interest']?`<div style="font-size:11px;color:var(--muted);margin-top:4px">${r['Majors of Interest']}</div>`:''}
-      </div>
-      <div class="contact-right">
-        <div style="font-size:12px;color:var(--muted)">${fmtDate(r['Timestamp'])}</div>
-        ${r['Submitted By']?`<div style="font-size:12px;color:var(--gold);margin-top:4px;font-weight:500">${r['Submitted By']}</div>`:''}
-        ${hasPhoto?`<div class="contact-photo" style="margin-top:8px"><span class="view-link" style="color:var(--green)" onclick="openLightbox('${r['Interest Form Photo Link']}','${r['First Name']||''} ${r['Last Name']||''} — Maverick Club Card')">📎 View card</span></div>`:''}
-      </div>
-    </div>`;
-  }).join('');
+  if (!rows.length) {
+    html += '<div class="empty">No interest cards yet</div>';
+  } else {
+    rows.slice().reverse().forEach(function(r) {
+      var hasPhoto = r['Interest Form Photo Link'] && r['Interest Form Photo Link'].indexOf('http') === 0;
+      html += '<div class="contact-card">';
+      html += '<div class="contact-name">' + (r['First Name'] || '') + ' ' + (r['Last Name'] || '') + ' <span style="font-size:12px;color:var(--muted);font-weight:400">' + (r['Gender'] || '') + '</span></div>';
+      html += '<div class="contact-meta">' + (r['Email'] || '') + ' · ' + (r['Phone'] || '') + '<br>' + [r['City'], r['State'], r['Zip']].filter(Boolean).join(', ') + '<br>' + (r['Church Name / City / State'] || '') + ' · Pastor ' + (r['Pastor Name'] || '-') + '<br>Grad ' + (r['HS Grad Year'] || '-') + '</div>';
+      if (r['Interests']) html += '<div class="contact-interests">' + r['Interests'] + '</div>';
+      if (r['Majors of Interest']) html += '<div style="font-size:11px;color:var(--muted);margin-top:4px">' + r['Majors of Interest'] + '</div>';
+      if (r['Submitted By']) html += '<div style="font-size:12px;color:var(--gold);margin-top:6px;font-weight:500">' + r['Submitted By'] + '</div>';
+      if (hasPhoto) html += '<div style="margin-top:8px"><span class="view-link" style="color:var(--green)" onclick="openLightbox(\'' + r['Interest Form Photo Link'] + '\')">View Maverick Club card</span></div>';
+      html += '</div>';
+    });
+  }
+  document.getElementById('con-body').innerHTML = html;
 }
 
-// ── LOG ──
 function renderLog(rows) {
-  rows = filterRows(rows);
-  document.getElementById('log-loading').style.display='none';
-  document.getElementById('log-content').style.display='block';
-  const icons={evaluation:'🏛️',expenses:'💰',infocard:'📋'};
-  const container=document.getElementById('log-items');
-  if(!rows.length){container.innerHTML='<div class="empty">No submissions yet</div>';return;}
-  container.innerHTML=rows.slice().reverse().map(r=>`
-    <div class="log-item">
-      <div class="log-time">${fmtDateTime(r['Timestamp'])}</div>
-      <div>${icons[r['Type']]||'📝'} <span class="log-desc">${r['Summary']||r['Type']}</span></div>
-    </div>
-  `).join('');
+  var icons = { evaluation: 'Church', expenses: 'Finance', infocard: 'Contact' };
+  var html = '';
+  if (!rows.length) {
+    html = '<div class="empty">No submissions yet</div>';
+  } else {
+    html = '<div class="table-wrap" style="padding:16px 20px">';
+    rows.slice().reverse().forEach(function(r) {
+      html += '<div class="log-item"><div class="log-time">' + fmtTime(r['Timestamp']) + '</div><div style="font-size:13px"><span style="color:var(--gold)">' + (icons[r['Type']] || r['Type']) + '</span> ' + (r['Summary'] || '') + '</div></div>';
+    });
+    html += '</div>';
+  }
+  document.getElementById('log-body').innerHTML = html;
 }
-
-// ── HELPERS ──
-function fmtDate(val) {
-  if(!val) return '—';
-  const d=new Date(val);
-  return isNaN(d)?String(val).split('T')[0]:d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-}
-function fmtDateShort(val) {
-  if(!val) return '—';
-  const d=new Date(val);
-  return isNaN(d)?String(val).split('T')[0]:d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-}
-function fmtDateTime(val) {
-  if(!val) return '—';
-  const d=new Date(val);
-  return isNaN(d)?'—':d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-}
-
-// Auto-refresh every 60 seconds
-setInterval(loadData, 60000);
-loadData();
 
 function exportCSV(type) {
   if (!cachedData) return;
   var rows = [];
-  var filename = '';
-  var filterFn = function(r) {
-    if (activeFilter === 'all') return true;
-    var g = (r['Tour Group'] || '').toLowerCase();
-    return activeFilter === 'mens' ? (g === 'mens' || g === '') : g === 'ladies';
-  };
-  if (type === 'expenses') { rows = (cachedData.expenses || []).filter(filterFn); filename = 'PBC_Tour_Expenses'; }
-  else if (type === 'income') { rows = (cachedData.income || []).filter(filterFn); filename = 'PBC_Tour_Income'; }
-  else if (type === 'evaluations') { rows = (cachedData.evaluations || []).filter(filterFn); filename = 'PBC_Tour_Evaluations'; }
-  else if (type === 'contacts') { rows = (cachedData.infocards || []).filter(filterFn); filename = 'PBC_Tour_Interest_Cards'; }
+  var filename = 'PBC_Tour';
+  if (type === 'expenses') { rows = filterRows(cachedData.expenses || []); filename = 'PBC_Tour_Expenses'; }
+  else if (type === 'income') { rows = filterRows(cachedData.income || []); filename = 'PBC_Tour_Income'; }
+  else if (type === 'evaluations') { rows = filterRows(cachedData.evaluations || []); filename = 'PBC_Tour_Evaluations'; }
+  else if (type === 'contacts') { rows = filterRows(cachedData.infocards || []); filename = 'PBC_Tour_Contacts'; }
   if (!rows.length) { alert('No data to export.'); return; }
 
   var headers = Object.keys(rows[0]);
-  var csvRows = [headers.join(',')];
+  var lines = [headers.join(',')];
   rows.forEach(function(row) {
     var vals = headers.map(function(h) {
-      var val = row[h] === null || row[h] === undefined ? '' : String(row[h]);
-      if (val.indexOf(',') > -1 || val.indexOf('"') > -1) {
-        val = '"' + val.replace(/"/g, '""') + '"';
-      }
-      return val;
+      var v = row[h] === null || row[h] === undefined ? '' : String(row[h]);
+      if (v.indexOf(',') > -1 || v.indexOf('"') > -1) { v = ['"', v.replace(/"/g, '""'), '"'].join(''); }
+      return v;
     });
-    csvRows.push(vals.join(','));
+    lines.push(vals.join(','));
   });
 
-  var csv = csvRows.join('\r\n');
-  var filterLabel = activeFilter !== 'all' ? '_' + activeFilter : '';
+  var csv = lines.join('\r\n');
+  var suffix = activeFilter !== 'all' ? '_' + activeFilter : '';
   var date = new Date().toISOString().split('T')[0];
-  var fullName = filename + filterLabel + '_' + date + '.csv';
   var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
-  a.href = url; a.download = fullName;
+  a.href = url; a.download = filename + suffix + '_' + date + '.csv';
   document.body.appendChild(a); a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+setInterval(loadData, 60000);
+loadData();
+</script>
+</body>
+</html>
