@@ -212,6 +212,14 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { document.getElementById('lightbox').classList.remove('show'); document.body.style.overflow = ''; }
 });
 
+function filterByCategory() {
+  if (!cachedData) return;
+  var cat = document.getElementById('cat-filter').value;
+  var rows = filterRows(cachedData.expenses || []);
+  if (cat) rows = rows.filter(function(r) { return (r['Category'] || '') === cat; });
+  renderFinances(rows);
+}
+
 function setLive(isLive) {
   var badge = document.getElementById('live-badge');
   var dot = document.getElementById('live-dot');
@@ -246,7 +254,11 @@ function loadData() {
 }
 
 function renderAll(data) {
-  renderFinances(filterRows(data.expenses || []));
+  var catFilter = document.getElementById('cat-filter');
+  var activeCat = catFilter ? catFilter.value : '';
+  var expRows = filterRows(data.expenses || []);
+  if (activeCat) expRows = expRows.filter(function(r) { return (r['Category'] || '') === activeCat; });
+  renderFinances(expRows);
   renderIncome(filterRows(data.income || []));
   renderEvaluations(filterRows(data.evaluations || []));
   renderContacts(filterRows(data.infocards || []));
