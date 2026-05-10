@@ -250,25 +250,36 @@ function switchTab(name, el) {
 }
 
 async function loadData() {
+  showLoading();
   try {
-    const resp = await fetch(SCRIPT_URL, {
+    const resp = await fetch(SCRIPT_URL + '?t=' + Date.now(), {
       method: 'GET',
-      redirect: 'follow'
+      redirect: 'follow',
+      mode: 'cors'
     });
+    if (!resp.ok) { showError('HTTP error: ' + resp.status); return; }
     const text = await resp.text();
     let data;
     try {
       data = JSON.parse(text);
     } catch(e) {
-      showError('Parse error: ' + text.slice(0, 300));
+      showError('Parse error — response was: ' + text.slice(0, 200));
       return;
     }
     if (data.error) { showError(data.error); return; }
     cachedData = data;
     renderAll(data);
   } catch(err) {
-    showError('Load error: ' + err.message);
+    showError('Network error: ' + err.message + '. Make sure Apps Script is deployed as "Anyone" can access.');
   }
+}
+
+function showLoading() {
+  document.querySelectorAll('[id$="-loading"]').forEach(el => {
+    el.style.display = 'block';
+    el.innerHTML = '<div class="spinner"></div>Loading…';
+  });
+  document.querySelectorAll('[id$="-content"]').forEach(el => el.style.display = 'none');
 }
 
 function handleData(data) {
