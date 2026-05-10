@@ -237,6 +237,7 @@ function loadData() {
     .then(function(data) {
       cachedData = data;
       renderAll(data);
+      setLive(true);
     })
     .catch(function(err) {
       document.getElementById('fin-body').innerHTML = '<div class="error-msg">Error: ' + err.message + '</div>';
