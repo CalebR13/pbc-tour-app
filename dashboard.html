@@ -131,7 +131,8 @@
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0YQJy7Ea4w0sUIo4kvYaaei407FxBMPlUgPrwLtirI2aoL4fk/exec";
 </script>
 
-<div class="topbar">
+<div id="debug-banner" style="display:none;background:#E05555;color:#fff;padding:10px 16px;font-size:13px;font-family:Montserrat,sans-serif;position:fixed;top:0;left:0;right:0;z-index:9999"></div>
+<div class="topbar" style="margin-top:0" id="main-topbar">
   <div class="topbar-left">
     <h1><span style="color:var(--gold)">P</span>BC Tour Dashboard</h1>
     <p>Sponsor & Treasurer view</p>
@@ -293,6 +294,10 @@ function handleData(data) {
 }
 
 function showError(msg) {
+  const banner = document.getElementById('debug-banner');
+  banner.style.display = 'block';
+  banner.textContent = msg;
+  document.getElementById('main-topbar').style.marginTop = '40px';
   document.querySelectorAll('[id$="-loading"]').forEach(el => {
     el.innerHTML = '<div style="color:var(--red);font-size:13px;padding:20px">⚠️ ' + msg + '</div>';
   });
