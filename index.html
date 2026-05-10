@@ -24,7 +24,7 @@ window.addEventListener('load', function() {
     canvas.width = 180; canvas.height = 180;
     const ctx = canvas.getContext('2d');
 
-    // Background
+    // Background - dark charcoal with rounded corners
     ctx.fillStyle = '#3b3b3b';
     ctx.beginPath();
     ctx.roundRect(0, 0, 180, 180, 36);
@@ -32,39 +32,22 @@ window.addEventListener('load', function() {
 
     // Gold accent bar at bottom
     ctx.fillStyle = '#f7b214';
-    ctx.fillRect(0, 156, 180, 24);
+    ctx.beginPath();
+    ctx.roundRect(0, 148, 180, 32, [0, 0, 36, 36]);
+    ctx.fill();
 
-    // Draw "P" letter
+    // "PBC" text in white
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 90px Georgia, serif';
+    ctx.font = '900 52px Montserrat, Arial Black, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('P', 82, 88);
+    ctx.fillText('PBC', 90, 86);
 
-    // Draw wheat stalk in gold
+    // "TOUR" small text in gold above bar
     ctx.fillStyle = '#f7b214';
-    ctx.strokeStyle = '#f7b214';
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-
-    // Stalk
-    ctx.beginPath();
-    ctx.moveTo(118, 130);
-    ctx.lineTo(118, 40);
-    ctx.stroke();
-
-    // Grain kernels
-    const kernels = [
-      [118, 45], [108, 58], [128, 58],
-      [110, 72], [126, 72],
-      [112, 86], [124, 86],
-      [114, 100], [122, 100]
-    ];
-    kernels.forEach(([x, y]) => {
-      ctx.beginPath();
-      ctx.ellipse(x, y, 5, 8, x > 118 ? 0.4 : -0.4, 0, Math.PI * 2);
-      ctx.fill();
-    });
+    ctx.font = '500 18px Montserrat, Arial, sans-serif';
+    ctx.letterSpacing = '3px';
+    ctx.fillText('TOUR', 90, 130);
 
     // Set as apple touch icon
     const link = document.getElementById('apple-touch-icon');
@@ -779,6 +762,7 @@ async function submit(){
     // Step 1: submit form data
     const submittedBy = v('submitted-by');
     if(!submittedBy){ const b=document.getElementById('err'); b.textContent='Please select your name before submitting.'; b.style.display='block'; document.getElementById('overlay').classList.remove('show'); document.getElementById('btn-sub').disabled=false; return; }
+    if(finType==='expense'){ const rf=document.getElementById('x-file'); if(!rf||rf.files.length===0){ const b=document.getElementById('err'); b.textContent='A photo of the receipt is required. Please go back and attach one.'; b.style.display='block'; document.getElementById('overlay').classList.remove('show'); document.getElementById('btn-sub').disabled=false; return; } }
     const payload=buildPayload();
     payload.submittedBy = submittedBy;
     const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
