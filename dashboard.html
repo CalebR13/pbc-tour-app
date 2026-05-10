@@ -531,10 +531,8 @@ function exportCSV(type) {
   const headers = Object.keys(rows[0]);
   const escape = val => {
     const str = val === null || val === undefined ? '' : String(val);
-    return str.includes(',') || str.includes('"') || str.includes('
-')
-      ? '"' + str.replace(/"/g, '""') + '"'
-      : str;
+    const needsQuoting = str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r');
+    return needsQuoting ? '"' + str.replace(/"/g, '""') + '"' : str;
   };
   const csv = [
     headers.map(escape).join(','),
