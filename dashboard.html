@@ -249,23 +249,23 @@ function switchTab(name, el) {
   if(cachedData) renderAll(cachedData);
 }
 
-async function loadData() {
-  try {
-    const resp = await fetch(SCRIPT_URL + '?t=' + Date.now(), {redirect: 'follow'});
-    const text = await resp.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch(parseErr) {
-      showError('Response parse error: ' + text.substring(0, 200));
-      return;
-    }
-    if(data.error) { showError('Script error: ' + data.error); return; }
-    cachedData = data;
-    renderAll(data);
-  } catch(err) {
-    showError('Fetch error: ' + err.message);
-  }
+function loadData() {
+  // Remove old script tag if exists
+  const old = document.getElementById('jsonp-script');
+  if (old) old.remove();
+
+  // JSONP approach to bypass CORS
+  const script = document.createElement('script');
+  script.id = 'jsonp-script';
+  script.src = SCRIPT_URL + '?callback=handleData&t=' + Date.now();
+  script.onerror = () => showError('Failed to load data. Check your Apps Script deployment.');
+  document.body.appendChild(script);
+}
+
+function handleData(data) {
+  if (data.error) { showError('Script error: ' + data.error); return; }
+  cachedData = data;
+  renderAll(data);
 }
 
 function showError(msg) {
