@@ -105,7 +105,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0Y
 <div class="topbar">
   <h1><span>P</span>BC Tour Dashboard</h1>
   <div class="topbar-right">
-    <div class="live-badge"><div class="live-dot"></div> Live</div>
+    <div class="live-badge" id="live-badge" style="background:var(--red-bg);border-color:rgba(224,85,85,0.3)"><div class="live-dot" id="live-dot" style="background:var(--red)"></div> <span id="live-text">Connecting...</span></div>
     <button class="refresh-btn" onclick="loadData()">&#8635; Refresh</button>
   </div>
 </div>
@@ -212,6 +212,25 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { document.getElementById('lightbox').classList.remove('show'); document.body.style.overflow = ''; }
 });
 
+function setLive(isLive) {
+  var badge = document.getElementById('live-badge');
+  var dot = document.getElementById('live-dot');
+  var text = document.getElementById('live-text');
+  if (isLive) {
+    badge.style.background = 'var(--green-bg)';
+    badge.style.borderColor = 'rgba(46,204,138,0.3)';
+    badge.style.color = 'var(--green)';
+    dot.style.background = 'var(--green)';
+    text.textContent = 'Live';
+  } else {
+    badge.style.background = 'var(--red-bg)';
+    badge.style.borderColor = 'rgba(224,85,85,0.3)';
+    badge.style.color = 'var(--red)';
+    dot.style.background = 'var(--red)';
+    text.textContent = 'Offline';
+  }
+}
+
 function loadData() {
   fetch(SCRIPT_URL)
     .then(function(r) { return r.json(); })
@@ -221,6 +240,7 @@ function loadData() {
     })
     .catch(function(err) {
       document.getElementById('fin-body').innerHTML = '<div class="error-msg">Error: ' + err.message + '</div>';
+      setLive(false);
     });
 }
 
