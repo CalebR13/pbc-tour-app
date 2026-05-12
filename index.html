@@ -270,7 +270,7 @@ window.addEventListener('load', function() {
     <div class="role-grid">
       <div class="role-card" data-role="evaluation" onclick="pickRole(this)">
         <div class="role-icon teal">🏛️</div>
-        <div><div class="role-name">Tour Group Leader</div><div class="role-desc">Submit a completed church visit</div></div>
+        <div><div class="role-name">Church Visit</div><div class="role-desc">Submit a completed church visit</div></div>
       </div>
       <div class="role-card" data-role="finances" onclick="pickRole(this)">
         <div class="role-icon amber">💰</div>
@@ -278,7 +278,11 @@ window.addEventListener('load', function() {
       </div>
       <div class="role-card" data-role="infocard" onclick="pickRole(this)">
         <div class="role-icon coral">📋</div>
-        <div><div class="role-name">Tour Member</div><div class="role-desc">Submit a student interest card</div></div>
+        <div><div class="role-name">Maverick Club</div><div class="role-desc">Submit a student interest card</div></div>
+      </div>
+      <div class="role-card" data-role="socials" onclick="pickRole(this)">
+        <div class="role-icon" style="background:#1a1a2e">📸</div>
+        <div><div class="role-name">Social Photos</div><div class="role-desc">Upload photos for social media</div></div>
       </div>
     </div>
     <div class="btn-row"><button class="btn btn-primary" onclick="startWorkflow()" id="btn-role" disabled>Continue →</button></div>
@@ -507,6 +511,41 @@ window.addEventListener('load', function() {
     <div class="btn-row"><button class="btn btn-secondary" onclick="back()">← Back</button><button class="btn btn-primary" onclick="review()">Review →</button></div>
   </div>
 
+  <!-- ── SOCIALS ── -->
+  <div class="screen" id="sc-socials">
+    <button class="top-back" onclick="back()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Back</button>
+    <div class="workflow-badge" style="background:#1a1a2e;color:#f7b214">📸 Social Photos</div>
+    <h2 class="screen-title">Upload Tour Photos</h2>
+    <p class="screen-subtitle">Photos upload directly to Google Drive at full quality — no compression.</p>
+
+    <div class="field-group">
+      <label class="field-label">Church / Location</label>
+      <input type="text" placeholder="e.g. Grace Baptist, Springfield, IL" id="soc-location">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Caption / Notes</label>
+      <textarea placeholder="Describe what's happening in the photos…" id="soc-caption" style="min-height:70px"></textarea>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Upload photos</label>
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:10px">📁</div>
+        <p style="font-size:14px;font-weight:500;margin-bottom:6px">Tap to open Tour Socials folder</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Photos upload at full quality directly to Google Drive</p>
+        <button onclick="openSocialsFolder()" style="background:var(--gold);color:var(--dark);border:none;padding:12px 28px;border-radius:var(--radius-sm);font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%">Open Drive Folder →</button>
+      </div>
+    </div>
+
+    <div class="notice" style="margin-top:4px">📌 After uploading to Drive, come back here and tap Done to log your submission.</div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="back()">← Back</button>
+      <button class="btn btn-primary" onclick="logSocialsSubmission()">Done ✓</button>
+    </div>
+  </div>
+
   <!-- ── REVIEW ── -->
   <div class="screen" id="sc-review">
     <button class="top-back" onclick="editBack()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Edit</button>
@@ -592,6 +631,41 @@ function addEvalIncomeEntry() {
   document.getElementById('ei-entries').appendChild(d);
 }
 
+const SOCIALS_FOLDER_URL = "https://drive.google.com/drive/folders/1QLUh0LEwvmzciJmcpXGp2kFSWW7qmSxS?usp=share_link";
+
+function openSocialsFolder() {
+  window.open(SOCIALS_FOLDER_URL, '_blank');
+}
+
+function logSocialsSubmission() {
+  // Log to sheet via Apps Script
+  var payload = {
+    role: 'socials',
+    tourGroup: tourGroup,
+    location: v('soc-location'),
+    caption: v('soc-caption'),
+    submittedBy: ''
+  };
+  // Show review screen for name selection then submit
+  document.getElementById('sc-socials').classList.remove('active');
+  buildSocialsReview();
+  updateNameDropdown();
+  prog(3);
+  document.getElementById('sc-review').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function buildSocialsReview() {
+  var h = '';
+  var row = function(l,v) { return v ? '<div style="display:flex;gap:12px;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted);min-width:130px;font-size:13px;flex-shrink:0">'+l+'</span><span style="font-weight:500">'+v+'</span></div>' : ''; };
+  h += row('Tour group', tourGroup);
+  h += row('Location', v('soc-location'));
+  h += row('Caption', v('soc-caption'));
+  h += row('Photos', 'Uploaded to Google Drive');
+  document.getElementById('rev-body').innerHTML = h;
+  document.getElementById('err').style.display='none';
+}
+
 function pickRole(el){
   document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));
   el.classList.add('selected'); role=el.dataset.role;
@@ -599,7 +673,7 @@ function pickRole(el){
 }
 function startWorkflow(){
   if(!role)return; prog(2);
-  formScreen = role==='finances'?'sc-finances': role==='evaluation'?'sc-evaluation':'sc-infocard';
+  formScreen = role==='finances'?'sc-finances': role==='evaluation'?'sc-evaluation': role==='socials'?'sc-socials':'sc-infocard';
   go('sc-role', formScreen);
 }
 function pickFinType(t,el){
@@ -753,6 +827,7 @@ function buildPayload(){
   }
   if(finType==='expense'){const cat=v('x-cat');const catDetail=cat==='Other'?v('x-cat-other-detail'):'';return{role:'expenses',type:'Expense',tourGroup,date:v('x-date'),amount:v('x-amt'),category:cat,categoryDetail:catDetail};}
   if(finType==='income'){const entries=[];document.querySelectorAll('.income-entry').forEach(e=>{const n=e.id.replace('ie-','');entries.push({amount:v('ia-'+n),category:v('ic-'+n),type:v('it-'+n)});});return{role:'expenses',type:'Income',tourGroup,church:v('i-church'),date:v('i-date'),entries};}
+  if(role==='socials') return{role:'socials',tourGroup,location:v('soc-location'),caption:v('soc-caption')};
   if(role==='infocard') return{role:'infocard',tourGroup,firstName:v('c-first'),lastName:v('c-last'),gender:rv['c-gender'],dob:v('c-dob'),gradYear:v('c-grad'),email:v('c-email'),phone:v('c-phone'),city:v('c-city'),state:v('c-state'),zip:v('c-zip'),church:v('c-church'),pastor:v('c-pastor'),interests:checked('c-interests').join(', '),majors:checked('c-majors').join(', ')};
 }
 async function submit(){
@@ -765,7 +840,7 @@ async function submit(){
     if(finType==='expense'){ const rf=document.getElementById('x-file'); if(!rf||rf.files.length===0){ const b=document.getElementById('err'); b.textContent='A photo of the receipt is required. Please go back and attach one.'; b.style.display='block'; document.getElementById('overlay').classList.remove('show'); document.getElementById('btn-sub').disabled=false; return; } }
     const payload=buildPayload();
     payload.submittedBy = submittedBy;
-    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
+    const r=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const j=await r.json();
     if(!j.success) throw new Error(j.error);
 
@@ -782,7 +857,7 @@ async function submit(){
         date: payload.date || '',
         file: fileData
       };
-      await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(filePayload)});
+      await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(filePayload)});
     }
 
     document.getElementById('ok-msg').textContent={evaluation:'Church evaluation saved.',expenses:'Financial record submitted.',infocard:'Student interest card saved.'}[role]||'Submitted!';
