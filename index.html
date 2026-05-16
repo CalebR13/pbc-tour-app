@@ -797,7 +797,7 @@ function review(){
   let h='';
   const ss=n=>'★'.repeat(n)+'☆'.repeat(5-n);
   if(role==='evaluation'){
-    h+=row('Date',v('e-date'))+row('Church',v('e-church'))+row('Pastor',v('e-pastor'))
+    h+=row('Date',v('e-date'))+row('Destination Church',v('e-church'))+row('Pastor',v('e-pastor'))
       +row('Teenagers',rv['e-teens']||'—')
       +row('PBC connections',rv['e-pbc']==='Yes'?'Yes — '+v('e-pbc-det'):rv['e-pbc']||'—')
       +row('Other colleges',v('e-colleges'))
@@ -807,7 +807,7 @@ function review(){
       +row('Recommend',v('e-rec')||document.getElementById('e-rec').value);
     if(evalIncomeAddon==='yes'){
       h+='<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;font-weight:600;color:var(--gold);margin-bottom:6px">INCOME RECEIVED</div>';
-      h+=row('Church',v('ei-church'))+row('Date',v('ei-date'));
+      h+=row('Destination Church',v('ei-church'))+row('Date',v('ei-date'));
       document.querySelectorAll('[id^="eie-"]').forEach((e,i)=>{const n=e.id.replace('eie-','');const amt=v('eia-'+n),cat=v('eic-'+n),typ=v('eit-'+n);h+=row('Entry '+(i+1),[amt?'$'+parseFloat(amt).toFixed(2):'',cat,typ].filter(Boolean).join(' · '));});
     }
   } else if(finType==='expense'){
@@ -815,7 +815,7 @@ function review(){
     h+=row('Date',v('x-date'))+row('Amount',v('x-amt')?'$'+parseFloat(v('x-amt')).toFixed(2):'—')
       +row('Category',v('x-cat'))+row('Receipt',f&&f.files.length?f.files[0].name:'None');
   } else if(finType==='income'){
-    h+=row('Church',v('i-church'))+row('Date',v('i-date'));
+    h+=row('Destination Church',v('i-church'))+row('Date',v('i-date'));
     document.querySelectorAll('.income-entry').forEach((e,i)=>{
       const n=e.id.replace('ie-','');
       const amt=v('ia-'+n),cat=v('ic-'+n),typ=v('it-'+n);
@@ -827,7 +827,7 @@ function review(){
       +row('Date of birth',v('c-dob'))+row('HS grad year',v('c-grad'))
       +row('Email',v('c-email'))+row('Phone',v('c-phone'))
       +row('City/State/Zip',[v('c-city'),v('c-state'),v('c-zip')].filter(Boolean).join(', '))
-      +row('Church',v('c-church'))+row('Pastor',v('c-pastor'))
+      +row('Destination Church',v('c-church'))+row('Pastor',v('c-pastor'))
       +row('Interests',checked('c-interests').join(', ')||'—')
       +row('Majors',checked('c-majors').join(', ')||'—')
       +row('Form photo',f&&f.files.length?f.files.length+' file(s)':'None');
@@ -972,9 +972,9 @@ function loadSchedule() {
         html += '<div class="schedule-date' + (isToday ? ' today' : '') + '">' + formatDate(date) + (isToday ? ' — TODAY' : '') + '</div>';
         byDate[date].forEach(function(ev) {
           html += '<div class="schedule-event' + (isToday ? ' today' : '') + '">';
-          html += '<div class="event-title">' + (ev['Event Type'] || ev['Event'] || 'Event') + '</div>';
-          if (ev['Service Times']) html += '<div class="event-time">⏰ ' + ev['Service Times'] + '</div>';
-          var loc = [ev['Church Name'], ev['City / State']].filter(Boolean).join(' · ');
+          html += '<div class="event-title">' + (ev['Event'] || 'Event') + '</div>';
+          if (ev['Event time']) html += '<div class="event-time">⏰ ' + ev['Event time'] + '</div>';
+          var loc = [ev['Destination Church'], ev['Destination City, State']].filter(Boolean).join(' · ');
           if (loc) html += '<div class="event-detail">' + loc + '</div>';
           html += '</div>';
         });
