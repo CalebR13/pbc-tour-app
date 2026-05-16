@@ -908,6 +908,8 @@ function loadSchedule() {
   fetch('https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0YQJy7Ea4w0sUIo4kvYaaei407FxBMPlUgPrwLtirI2aoL4fk/exec')
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      console.log('schedule rows:', (data.schedule || []).length, 'tourGroup:', tourGroup);
+      if (data.schedule && data.schedule.length > 0) console.log('first row:', JSON.stringify(data.schedule[0]));
       var rows = (data.schedule || []).filter(function(r) {
         var g = (r['Tour Group'] || '').toLowerCase();
         return g === tourGroup || g === 'both' || g === '';
