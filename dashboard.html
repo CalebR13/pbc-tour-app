@@ -527,7 +527,7 @@ function renderSchedule(rows) {
       var rowIdx = filtered.indexOf(ev);
       html += '<div class="sched-event' + (isToday?' today':'') + '">';
       var evType = ev['Event'] || '';
-      html += '<div class="sched-event-title"><span>' + (evType||'—') + '</span><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button></div>';
+      html += '<div class="sched-event-title"><span>' + (evType||'—') + '</span><div style="display:flex;gap:4px"><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button><button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteEvent(' + rowIdx + ')">✕</button></div></div>';
       if (ev['Event time']) html += '<div class="sched-event-time">⏰ ' + ev['Event time'] + '</div>';
       var loc = [ev['Destination Church'],ev['Destination City, State']].filter(Boolean).join(' · ');
       if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
