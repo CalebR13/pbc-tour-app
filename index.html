@@ -946,15 +946,14 @@ function loadSchedule() {
         html += '<div class="schedule-date' + (isToday ? ' today' : '') + '">' + formatDate(date) + (isToday ? ' — TODAY' : '') + '</div>';
         byDate[date].forEach(function(ev) {
           html += '<div class="schedule-event' + (isToday ? ' today' : '') + '">';
-          html += '<div class="event-title">' + (ev['Event'] || ev['Event Title'] || 'Event') + '</div>';
-          if (ev['Service Time']) html += '<div class="event-time">⏰ ' + fmtTime(ev['Service Time']) + '</div>'; else if (ev['Departure Time']) html += '<div class="event-time">🚌 Departs ' + fmtTime(ev['Departure Time']) + '</div>';
+          html += '<div class="event-title">' + (ev['Event Type'] || ev['Event'] || 'Event') + '</div>';
+          if (ev['Service Times']) html += '<div class="event-time">⏰ ' + ev['Service Times'] + '</div>';
           var details = [];
-          if (ev['Destination']) details.push(ev['Destination']);
+          if (ev['Church Name']) details.push(ev['Church Name']);
           if (ev['City / State']) details.push(ev['City / State']);
-          if (ev['Departure Time']) details.push('Depart: ' + fmtTime(ev['Departure Time']));
-          if (ev['ETA']) details.push('ETA: ' + fmtTime(ev['ETA']));
-          if (ev['Lodging']) details.push('Lodging: ' + ev['Lodging']);
+          if (ev['Pastor']) details.push('Pastor: ' + ev['Pastor']);
           if (details.length) html += '<div class="event-detail">' + details.join(' · ') + '</div>';
+          if (ev['Lodging']) html += '<div class="event-detail" style="margin-top:4px">🏠 ' + ev['Lodging'] + '</div>';
           if (ev['Notes']) html += '<div class="event-detail" style="margin-top:6px;font-style:italic;color:var(--muted)">' + ev['Notes'] + '</div>';
           html += '</div>';
         });
