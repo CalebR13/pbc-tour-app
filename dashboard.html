@@ -498,22 +498,36 @@ function renderSchedule(rows) {
   if (!filtered.length) { document.getElementById('sched-body').innerHTML = '<div class="empty">No schedule data yet.</div>'; return; }
 
   var byDate = {};
-  filtered.forEach(function(r) { var d = r['Date']||''; if(!byDate[d]) byDate[d]=[]; byDate[d].push(r); });
-  var today = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric'}).replace(',','');
-  var dates = Object.keys(byDate);
+  filtered.forEach(function(r) {
+    var raw = r['Date'] || '';
+    var d = raw;
+    // Handle Google Sheets timestamp (e.g. 2026-05-16T05:00:00.000Z)
+    if (raw.indexOf('T') > -1) {
+      var dt = new Date(raw);
+      d = dt.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+    }
+    r['_displayDate'] = d;
+    if(!byDate[d]) byDate[d]=[];
+    byDate[d].push(r);
+  });
+  var todayStr = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  var dates = Object.keys(byDate).sort(function(a,b) {
+    return new Date(a) - new Date(b);
+  });
 
   var ladiesSel = group === 'ladies' ? ' selected' : '';
   var mensSel = group === 'mens' ? ' selected' : '';
   var html = '<div class="sched-filter"><label>Tour:</label><select id="sched-group-filter" onchange="if(cachedData)renderSchedule(cachedData.schedule||[])"><option value="all">All</option><option value="ladies"' + ladiesSel + ">Ladies'</option><option value='mens'" + mensSel + ">Men's</option></select></div>";
 
   dates.forEach(function(date) {
-    var isToday = date === today || date.replace(',','') === today;
+    var isToday = date === todayStr;
     html += '<div class="sched-day">';
-    html += '<div class="sched-date' + (isToday?' today':'') + '">' + date + (byDate[date][0]['Day of Week'] ? ' — ' + byDate[date][0]['Day of Week'] : '') + (isToday?' ★ TODAY':'') + '</div>';
+    html += '<div class="sched-date' + (isToday?' today':'') + '">' + date + (byDate[date][0] && byDate[date][0]['Day of Week'] ? ' — ' + byDate[date][0]['Day of Week'] : '') + (isToday?' ★ TODAY':'') + '</div>';
     byDate[date].forEach(function(ev, idx) {
       var rowIdx = filtered.indexOf(ev);
       html += '<div class="sched-event' + (isToday?' today':'') + '">';
-      html += '<div class="sched-event-title"><span>' + (ev['Event Type']||'—') + '</span><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button></div>';
+      var evType = ev['Event Type'] || ev['Event'] || ev['event_type'] || '';
+      html += '<div class="sched-event-title"><span>' + (evType||'—') + '</span><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button></div>';
       if (ev['Service Times']) html += '<div class="sched-event-time">⏰ ' + ev['Service Times'] + '</div>';
       var loc = [ev['Church Name'],ev['City / State']].filter(Boolean).join(' · ');
       if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
