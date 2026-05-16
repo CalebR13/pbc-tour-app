@@ -502,7 +502,9 @@ function renderSchedule(rows) {
   var today = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric'}).replace(',','');
   var dates = Object.keys(byDate);
 
-  var html = '<div class="sched-filter"><label>Tour:</label><select id="sched-group-filter" onchange="if(cachedData)renderSchedule(cachedData.schedule||[])"><option value="all">All</option><option value="ladies"' + (group==='ladies'?' selected':'') + ">Ladies'</option><option value="mens"" + (group==='mens'?' selected':'') + ">Men's</option></select></div>";
+  var ladiesSel = group === 'ladies' ? ' selected' : '';
+  var mensSel = group === 'mens' ? ' selected' : '';
+  var html = '<div class="sched-filter"><label>Tour:</label><select id="sched-group-filter" onchange="if(cachedData)renderSchedule(cachedData.schedule||[])"><option value="all">All</option><option value="ladies"' + ladiesSel + ">Ladies'</option><option value='mens'" + mensSel + ">Men's</option></select></div>";
 
   dates.forEach(function(date) {
     var isToday = date === today || date.replace(',','') === today;
