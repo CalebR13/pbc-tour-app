@@ -532,7 +532,7 @@ function renderSchedule(rows) {
       var loc = [ev['Destination Church'],ev['Destination City, State']].filter(Boolean).join(' · ');
       if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
       if (ev['Pastor']) html += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
-      if (ev['Lodging']) html += '<div class="sched-event-lodging">🏠 ' + ev['Lodging'] + '</div>';
+      if (ev['Lodging']) html += '<div class="sched-event-lodging">🛏️ ' + ev['Lodging'] + '</div>';
       if (ev['Leader Notes']) html += '<div class="sched-event-notes">' + ev['Leader Notes'] + '</div>';
       html += '</div>';
     });
