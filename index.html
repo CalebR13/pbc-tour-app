@@ -212,6 +212,17 @@ window.addEventListener('load', function() {
   @keyframes spin { to { transform: rotate(360deg); } }
   .err-banner { background: #FCF0EE; border: 1.5px solid #E0A090; border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: var(--accent-coral); margin-bottom: 16px; display: none; }
   @media (max-width: 400px) { .row-2,.row-3 { grid-template-columns: 1fr; } .star { width: 34px; height: 34px; font-size: 17px; } }
+  .schedule-day { margin-bottom: 20px; }
+  .schedule-date { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .schedule-date.today { color: var(--gold); border-bottom-color: var(--gold); }
+  .schedule-event { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 8px; }
+  .schedule-event.today { border-color: var(--gold); background: rgba(247,178,20,0.05); }
+  .event-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .event-time { font-size: 12px; color: var(--gold); font-weight: 500; margin-bottom: 6px; }
+  .event-detail { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .today-banner { background: var(--gold); color: var(--dark); padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; margin-bottom: 20px; text-align: center; letter-spacing: 0.04em; }
+  .schedule-empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; }
+  .schedule-loading { text-align: center; padding: 40px; color: var(--muted); }
   .tour-toggle-wrap { margin-bottom: 20px; }
   .tour-toggle-label { font-size: 11px; font-weight: 200; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
   .tour-toggle { display: grid; grid-template-columns: 1fr 1fr; background: var(--border); border-radius: 8px; padding: 3px; gap: 3px; }
@@ -283,6 +294,10 @@ window.addEventListener('load', function() {
       <div class="role-card" data-role="socials" onclick="pickRole(this)">
         <div class="role-icon" style="background:#1a1a2e">📸</div>
         <div><div class="role-name">Social Photos</div><div class="role-desc">Upload photos for social media</div></div>
+      </div>
+      <div class="role-card" data-role="schedule" onclick="pickRole(this)">
+        <div class="role-icon" style="background:#0d2b1e">📅</div>
+        <div><div class="role-name">Tour Schedule</div><div class="role-desc">View the daily tour schedule</div></div>
       </div>
     </div>
     <div class="btn-row"><button class="btn btn-primary" onclick="startWorkflow()" id="btn-role" disabled>Continue →</button></div>
@@ -546,6 +561,18 @@ window.addEventListener('load', function() {
     </div>
   </div>
 
+  <!-- ── SCHEDULE ── -->
+  <div class="screen" id="sc-schedule">
+    <button class="top-back" onclick="back()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Back</button>
+    <div class="workflow-badge" style="background:#0d2b1e;color:#2ECC8A">📅 Tour Schedule</div>
+    <h2 class="screen-title">Tour Schedule</h2>
+    <p class="screen-subtitle" id="sched-subtitle">Loading schedule...</p>
+    <div id="schedule-content"><div class="schedule-loading">Loading...</div></div>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn btn-secondary" onclick="back()">← Back</button>
+    </div>
+  </div>
+
   <!-- ── REVIEW ── -->
   <div class="screen" id="sc-review">
     <button class="top-back" onclick="editBack()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Edit</button>
@@ -673,8 +700,9 @@ function pickRole(el){
 }
 function startWorkflow(){
   if(!role)return; prog(2);
-  formScreen = role==='finances'?'sc-finances': role==='evaluation'?'sc-evaluation': role==='socials'?'sc-socials':'sc-infocard';
+  formScreen = role==='finances'?'sc-finances': role==='evaluation'?'sc-evaluation': role==='socials'?'sc-socials': role==='schedule'?'sc-schedule':'sc-infocard';
   go('sc-role', formScreen);
+  if (role === 'schedule') loadSchedule();
 }
 function pickFinType(t,el){
   finType=t;
@@ -872,6 +900,77 @@ async function submit(){
     document.getElementById('btn-sub').disabled=false;
   }
 }
+function loadSchedule() {
+  var container = document.getElementById('schedule-content');
+  var subtitle = document.getElementById('sched-subtitle');
+  container.innerHTML = '<div class="schedule-loading">Loading schedule...</div>';
+
+  fetch('https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0YQJy7Ea4w0sUIo4kvYaaei407FxBMPlUgPrwLtirI2aoL4fk/exec')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var rows = (data.schedule || []).filter(function(r) {
+        var g = (r['Tour Group'] || '').toLowerCase();
+        return g === tourGroup || g === 'both' || g === '';
+      });
+
+      if (!rows.length) {
+        container.innerHTML = '<div class="schedule-empty">No schedule posted yet.<br>Check back soon!</div>';
+        subtitle.textContent = tourGroup === 'ladies' ? "Ladies' Tour" : "Men's Tour";
+        return;
+      }
+
+      // Group by date
+      var byDate = {};
+      rows.forEach(function(r) {
+        var d = String(r['Date']).split('T')[0];
+        if (!byDate[d]) byDate[d] = [];
+        byDate[d].push(r);
+      });
+
+      var today = new Date().toISOString().split('T')[0];
+      var dates = Object.keys(byDate).sort();
+      var todayEvents = byDate[today] || [];
+
+      subtitle.textContent = (tourGroup === 'ladies' ? "Ladies'" : "Men's") + " Tour — " + dates.length + " day" + (dates.length !== 1 ? 's' : '');
+
+      var html = '';
+      if (todayEvents.length) {
+        html += '<div class="today-banner">TODAY — ' + formatDate(today) + '</div>';
+      }
+
+      dates.forEach(function(date) {
+        var isToday = date === today;
+        html += '<div class="schedule-day">';
+        html += '<div class="schedule-date' + (isToday ? ' today' : '') + '">' + formatDate(date) + (isToday ? ' — TODAY' : '') + '</div>';
+        byDate[date].forEach(function(ev) {
+          html += '<div class="schedule-event' + (isToday ? ' today' : '') + '">';
+          html += '<div class="event-title">' + (ev['Event'] || ev['Event Title'] || 'Event') + '</div>';
+          if (ev['Service Time']) html += '<div class="event-time">⏰ ' + ev['Service Time'] + '</div>'; else if (ev['Departure Time']) html += '<div class="event-time">🚌 Departs ' + ev['Departure Time'] + '</div>';
+          var details = [];
+          if (ev['Destination']) details.push(ev['Destination']);
+          if (ev['City / State']) details.push(ev['City / State']);
+          if (ev['Departure Time']) details.push('Depart: ' + ev['Departure Time']);
+          if (ev['ETA']) details.push('ETA: ' + ev['ETA']);
+          if (ev['Lodging']) details.push('Lodging: ' + ev['Lodging']);
+          if (details.length) html += '<div class="event-detail">' + details.join(' · ') + '</div>';
+          if (ev['Notes']) html += '<div class="event-detail" style="margin-top:6px;font-style:italic;color:var(--muted)">' + ev['Notes'] + '</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+      });
+
+      container.innerHTML = html;
+    })
+    .catch(function(err) {
+      container.innerHTML = '<div class="schedule-empty">Could not load schedule.<br>Check your connection.</div>';
+    });
+}
+
+function formatDate(dateStr) {
+  var d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
 function resetToHome(){
   reset();
   window.scrollTo(0,0);
