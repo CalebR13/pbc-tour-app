@@ -559,6 +559,7 @@ function openEditModal(rowIdx) {
   document.getElementById('edit-lodging').value = ev['Lodging'] || '';
   document.getElementById('edit-notes').value = ev['Notes'] || '';
   document.getElementById('edit-tour-group').value = ev['Tour Group'] || '';
+  document.getElementById('save-btn-label').textContent = 'Save Changes';
   document.getElementById('edit-modal').classList.add('show');
   document.body.style.overflow = 'hidden';
 }
@@ -570,12 +571,9 @@ function closeEditModal() {
 }
 
 function saveEdit() {
-  if (!editingRow) return;
-  var updated = {
-    action: 'updateSchedule',
-    tourGroup: document.getElementById('edit-tour-group').value,
-    date: editingRow['Date'],
-    originalEventType: editingRow['Event Type'],
+  var tourGroup = document.getElementById('edit-tour-group').value;
+  var payload = {
+    tourGroup: tourGroup,
     eventType: document.getElementById('edit-event-type').value,
     churchName: document.getElementById('edit-church').value,
     cityState: document.getElementById('edit-city').value,
@@ -585,23 +583,24 @@ function saveEdit() {
     notes: document.getElementById('edit-notes').value
   };
 
-  fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(updated) })
+  if (editingRow) {
+    // Editing existing row
+    payload.action = 'updateSchedule';
+    payload.date = editingRow['Date'];
+    payload.originalEventType = editingRow['Event Type'] || editingRow['Event'] || '';
+  } else {
+    // Adding new row
+    payload.action = 'addScheduleEvent';
+    payload.date = document.getElementById('edit-row-index').value;
+  }
+
+  fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(payload) })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.success) {
-        // Update local cache
-        Object.assign(editingRow, {
-          'Event Type': updated.eventType,
-          'Church Name': updated.churchName,
-          'City / State': updated.cityState,
-          'Pastor': updated.pastor,
-          'Service Times': updated.serviceTimes,
-          'Lodging': updated.lodging,
-          'Notes': updated.notes
-        });
-        renderSchedule(cachedData.schedule || []);
+        loadData(); // Refresh all data
         closeEditModal();
-      }
+      } else { alert('Save failed'); }
     })
     .catch(function(err) { alert('Save failed: ' + err.message); });
 }
@@ -638,7 +637,7 @@ loadData();
     <div class="edit-field"><label>Notes</label><textarea id="edit-notes"></textarea></div>
     <div class="edit-btns">
       <button class="cancel-btn" onclick="closeEditModal()">Cancel</button>
-      <button class="save-btn" onclick="saveEdit()">Save Changes</button>
+      <button class="save-btn" onclick="saveEdit()" id="save-btn-label">Save Changes</button>
     </div>
   </div>
 </div>
