@@ -237,10 +237,14 @@ window.addEventListener('load', function() {
   .income-addon-btn.yes.active { background: var(--gold); color: var(--dark); }
   .income-section { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
   .income-section.show { display: block; }
-  .home-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 500; font-family: 'Montserrat', sans-serif; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: all 0.2s; flex-shrink: 0; }
+  .home-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 500; font-family: 'Montserrat', sans-serif; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: all 0.2s; flex-shrink: 0; }
   .home-btn:hover { background: rgba(255,255,255,0.2); }
-  .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 16px 14px; }
-  .header-inner h1 { flex: 1; text-align: left; font-size: 17px; }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px 12px; }
+  .header-inner h1 { flex: 1; text-align: left; font-size: 16px; }
+  .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .tour-pill { display: flex; align-items: center; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; overflow: hidden; }
+  .tour-pill-btn { padding: 5px 10px; font-size: 11px; font-weight: 600; font-family: 'Montserrat', sans-serif; cursor: pointer; border: none; background: transparent; color: rgba(255,255,255,0.45); transition: all 0.2s; -webkit-tap-highlight-color: transparent; white-space: nowrap; }
+  .tour-pill-btn.active { background: var(--gold); color: var(--dark); }
   .top-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--muted); background: none; border: none; cursor: pointer; padding: 0 0 18px 0; font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
   .top-back:hover { color: var(--dark); }
   .top-back svg { width: 16px; height: 16px; }
@@ -255,7 +259,13 @@ window.addEventListener('load', function() {
 <div class="header">
   <div class="header-inner">
     <h1>Providence Tour Team App</h1>
-    <button class="home-btn" onclick="resetToHome()">⌂ Home</button>
+    <div class="header-right">
+      <div class="tour-pill">
+        <button class="tour-pill-btn active" id="pill-mens" onclick="switchTourPill('mens')">Men's</button>
+        <button class="tour-pill-btn" id="pill-ladies" onclick="switchTourPill('ladies')">Ladies'</button>
+      </div>
+      <button class="home-btn" onclick="resetToHome()">⌂</button>
+    </div>
   </div>
   <div class="header-bar"></div>
 </div>
@@ -608,12 +618,28 @@ let tourGroup = localStorage.getItem('pbcTourGroup') || 'mens';
 const MENS_NAMES = ['Putnam','Walker','Tan','McDonnell','Davadilla','Wilbar','Rardin'];
 const LADIES_NAMES = ['Bartels','Bessine','Bottrell','Chase','Miller','Palmer','Rardin'];
 
+function switchTourPill(group) {
+  setTourGroup(group);
+  // If on role screen, update the toggle there too
+  var btns = document.querySelectorAll('.tour-btn');
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  var activeBtn = document.getElementById('btn-' + group);
+  if (activeBtn) activeBtn.classList.add('active');
+}
+
 function setTourGroup(group) {
   tourGroup = group;
   localStorage.setItem('pbcTourGroup', group);
-  document.getElementById('btn-mens').classList.toggle('active', group === 'mens');
-  document.getElementById('btn-ladies').classList.toggle('active', group === 'ladies');
-  document.getElementById('btn-ladies').classList.toggle('ladies', true);
+  // Update role screen toggle
+  var btnMens = document.getElementById('btn-mens');
+  var btnLadies = document.getElementById('btn-ladies');
+  if (btnMens) btnMens.classList.toggle('active', group === 'mens');
+  if (btnLadies) { btnLadies.classList.toggle('active', group === 'ladies'); btnLadies.classList.add('ladies'); }
+  // Update header pills
+  var pillMens = document.getElementById('pill-mens');
+  var pillLadies = document.getElementById('pill-ladies');
+  if (pillMens) pillMens.classList.toggle('active', group === 'mens');
+  if (pillLadies) pillLadies.classList.toggle('active', group === 'ladies');
   updateNameDropdown();
 }
 
