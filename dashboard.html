@@ -419,7 +419,7 @@ function renderContacts(rows) {
 }
 
 function renderLog(rows) {
-  var icons = { evaluation: 'Church', expenses: 'Finance', infocard: 'Contact' };
+  var icons = { evaluation: 'Destination Church', expenses: 'Finance', infocard: 'Contact' };
   var html = '';
   if (!rows.length) {
     html = '<div class="empty">No submissions yet</div>';
@@ -526,14 +526,14 @@ function renderSchedule(rows) {
     byDate[date].forEach(function(ev, idx) {
       var rowIdx = filtered.indexOf(ev);
       html += '<div class="sched-event' + (isToday?' today':'') + '">';
-      var evType = ev['Event Type'] || ev['Event'] || ev['event_type'] || '';
+      var evType = ev['Event'] || '';
       html += '<div class="sched-event-title"><span>' + (evType||'—') + '</span><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button></div>';
-      if (ev['Service Times']) html += '<div class="sched-event-time">⏰ ' + ev['Service Times'] + '</div>';
-      var loc = [ev['Church Name'],ev['City / State']].filter(Boolean).join(' · ');
+      if (ev['Event time']) html += '<div class="sched-event-time">⏰ ' + ev['Event time'] + '</div>';
+      var loc = [ev['Destination Church'],ev['Destination City, State']].filter(Boolean).join(' · ');
       if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
       if (ev['Pastor']) html += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
       if (ev['Lodging']) html += '<div class="sched-event-lodging">🏠 ' + ev['Lodging'] + '</div>';
-      if (ev['Notes']) html += '<div class="sched-event-notes">' + ev['Notes'] + '</div>';
+      if (ev['Leader Notes']) html += '<div class="sched-event-notes">' + ev['Leader Notes'] + '</div>';
       html += '</div>';
     });
     html += '</div>';
@@ -552,12 +552,12 @@ function openEditModal(rowIdx) {
   editingRow = ev;
   document.getElementById('edit-modal-title').textContent = 'Edit — ' + (ev['Date']||'');
   document.getElementById('edit-event-type').value = ev['Event Type'] || '';
-  document.getElementById('edit-church').value = ev['Church Name'] || '';
-  document.getElementById('edit-city').value = ev['City / State'] || '';
+  document.getElementById('edit-church').value = ev['Destination Church'] || '';
+  document.getElementById('edit-city').value = ev['Destination City, State'] || '';
   document.getElementById('edit-pastor').value = ev['Pastor'] || '';
-  document.getElementById('edit-times').value = ev['Service Times'] || '';
+  document.getElementById('edit-times').value = ev['Event time'] || '';
   document.getElementById('edit-lodging').value = ev['Lodging'] || '';
-  document.getElementById('edit-notes').value = ev['Notes'] || '';
+  document.getElementById('edit-notes').value = ev['Leader Notes'] || '';
   document.getElementById('edit-tour-group').value = ev['Tour Group'] || '';
   document.getElementById('save-btn-label').textContent = 'Save Changes';
   document.getElementById('edit-modal').classList.add('show');
