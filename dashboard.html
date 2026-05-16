@@ -514,7 +514,7 @@ function renderSchedule(rows) {
 
   var ladiesSel = group === 'ladies' ? ' selected' : '';
   var mensSel = group === 'mens' ? ' selected' : '';
-  var html = '<div class="sched-filter"><label>Tour:</label><select id="sched-group-filter" onchange="if(cachedData)renderSchedule(cachedData.schedule||[])"><option value="all">All</option><option value="ladies"' + ladiesSel + ">Ladies'</option><option value='mens'" + mensSel + ">Men's</option></select></div>";
+  var html = '';
 
   dates.forEach(function(date) {
     var isToday = date === todayStr;
@@ -522,9 +522,15 @@ function renderSchedule(rows) {
     html += '<div class="sched-date' + (isToday?' today':'') + '">' + date + (byDate[date][0] && byDate[date][0]['Day of Week'] ? ' — ' + byDate[date][0]['Day of Week'] : '') + (isToday?' ★ TODAY':'') + '</div>';
     byDate[date].forEach(function(ev, idx) {
       var rowIdx = filtered.indexOf(ev);
-      html += '<div class="sched-event' + (isToday?' today':'') + '">';
+      var evGroup = (ev['Tour Group'] || '').toLowerCase();
+      var borderColor = evGroup === 'ladies' ? '#f7b214' : evGroup === 'mens' ? '#7BAFF8' : 'rgba(255,255,255,0.08)';
+      var badgeBg = evGroup === 'ladies' ? 'rgba(247,178,20,0.15)' : 'rgba(123,175,248,0.15)';
+      var badgeColor = evGroup === 'ladies' ? '#f7b214' : '#7BAFF8';
+      var badgeLabel = evGroup === 'ladies' ? "Ladies'" : evGroup === 'mens' ? "Men's" : '';
+      var badge = (badgeLabel && group === 'all') ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:' + badgeBg + ';color:' + badgeColor + ';margin-left:8px">' + badgeLabel + '</span>' : '';
+      html += '<div class="sched-event' + (isToday?' today':'') + '" style="border-left:3px solid ' + borderColor + ';padding-left:12px">';
       var evType = ev['Event'] || '';
-      html += '<div class="sched-event-title"><span>' + (evType||'—') + '</span><div style="display:flex;gap:4px"><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button><button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteEvent(' + rowIdx + ')">✕</button></div></div>';
+      html += '<div class="sched-event-title"><span>' + (evType||'—') + badge + '</span><div style="display:flex;gap:4px"><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button><button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteEvent(' + rowIdx + ')">✕</button></div></div>';
       if (ev['Event time']) html += '<div class="sched-event-time">⏰ ' + ev['Event time'] + '</div>';
       var loc = [ev['Destination Church'],ev['Destination City, State']].filter(Boolean).join(' · ');
       if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
