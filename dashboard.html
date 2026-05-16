@@ -91,6 +91,33 @@ td a:hover, .view-link:hover { text-decoration: underline; }
 .error-msg { color: var(--red); font-size: 13px; padding: 20px; text-align: center; }
 
 @media (max-width: 600px) { .chart-row { grid-template-columns: 1fr; } }
+.sched-filter { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+.sched-filter label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.sched-filter select { background: var(--surface); border: 1px solid var(--border2); color: var(--text); padding: 6px 12px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 12px; cursor: pointer; }
+.sched-day { margin-bottom: 20px; }
+.sched-date { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.sched-date.today { color: var(--gold); border-bottom-color: var(--gold); }
+.sched-event { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 8px; position: relative; }
+.sched-event.today { border-color: var(--gold); }
+.sched-event-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+.sched-event-time { font-size: 12px; color: var(--gold); margin-bottom: 6px; }
+.sched-event-detail { font-size: 12px; color: var(--muted); line-height: 1.7; }
+.sched-event-lodging { font-size: 12px; color: var(--blue); margin-top: 4px; }
+.sched-event-notes { font-size: 12px; color: var(--dim); font-style: italic; margin-top: 4px; }
+.edit-btn { background: none; border: 1px solid var(--border2); color: var(--muted); padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-family: 'Montserrat', sans-serif; white-space: nowrap; }
+.edit-btn:hover { border-color: var(--gold); color: var(--gold); }
+.edit-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+.edit-modal.show { display: flex; }
+.edit-box { background: var(--surface); border-radius: var(--radius); padding: 20px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+.edit-box h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+.edit-field { margin-bottom: 12px; }
+.edit-field label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+.edit-field input, .edit-field select, .edit-field textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border2); color: var(--text); padding: 8px 12px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 13px; }
+.edit-field textarea { min-height: 60px; resize: vertical; }
+.edit-field input:focus, .edit-field select:focus, .edit-field textarea:focus { outline: none; border-color: var(--gold); }
+.edit-btns { display: flex; gap: 8px; margin-top: 16px; }
+.save-btn { flex: 1; background: var(--gold); color: var(--bg); border: none; padding: 10px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
+.cancel-btn { background: var(--surface2); border: 1px solid var(--border2); color: var(--muted); padding: 10px 16px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 13px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -120,6 +147,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0Y
   <div class="tab" onclick="switchTab('evaluations', this)">Evaluations</div>
   <div class="tab" onclick="switchTab('contacts', this)">Contacts</div>
   <div class="tab" onclick="switchTab('log', this)">Log</div>
+  <div class="tab" onclick="switchTab('schedule', this)">📅 Schedule</div>
 </div>
 
 <div class="panel active" id="panel-finances">
@@ -145,6 +173,10 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0Y
 <div class="panel" id="panel-contacts">
   <div id="con-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
 </div>
+<div class="panel" id="panel-schedule">
+  <div id="sched-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+</div>
+
 <div class="panel" id="panel-log">
   <div id="log-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
 </div>
@@ -244,6 +276,7 @@ function renderAll(data) {
   renderEvaluations(filterRows(data.evaluations || []));
   renderContacts(filterRows(data.infocards || []));
   renderLog(filterRows(data.log || []));
+  renderSchedule(data.schedule || []);
 }
 
 function renderFinances(rows) {
@@ -454,8 +487,145 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
+// ── SCHEDULE ──────────────────────────────────────────────────
+var editingRow = null;
+
+function renderSchedule(rows) {
+  var schedFilter = document.getElementById('sched-group-filter');
+  var group = schedFilter ? schedFilter.value : 'all';
+  var filtered = group === 'all' ? rows : rows.filter(function(r) { return (r['Tour Group']||'').toLowerCase() === group; });
+
+  if (!filtered.length) { document.getElementById('sched-body').innerHTML = '<div class="empty">No schedule data yet.</div>'; return; }
+
+  var byDate = {};
+  filtered.forEach(function(r) { var d = r['Date']||''; if(!byDate[d]) byDate[d]=[]; byDate[d].push(r); });
+  var today = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric'}).replace(',','');
+  var dates = Object.keys(byDate);
+
+  var html = '<div class="sched-filter"><label>Tour:</label><select id="sched-group-filter" onchange="if(cachedData)renderSchedule(cachedData.schedule||[])"><option value="all">All</option><option value="ladies"' + (group==='ladies'?' selected':'') + ">Ladies'</option><option value="mens"" + (group==='mens'?' selected':'') + ">Men's</option></select></div>";
+
+  dates.forEach(function(date) {
+    var isToday = date === today || date.replace(',','') === today;
+    html += '<div class="sched-day">';
+    html += '<div class="sched-date' + (isToday?' today':'') + '">' + date + (byDate[date][0]['Day of Week'] ? ' — ' + byDate[date][0]['Day of Week'] : '') + (isToday?' ★ TODAY':'') + '</div>';
+    byDate[date].forEach(function(ev, idx) {
+      var rowIdx = filtered.indexOf(ev);
+      html += '<div class="sched-event' + (isToday?' today':'') + '">';
+      html += '<div class="sched-event-title"><span>' + (ev['Event Type']||'—') + '</span><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button></div>';
+      if (ev['Service Times']) html += '<div class="sched-event-time">⏰ ' + ev['Service Times'] + '</div>';
+      var loc = [ev['Church Name'],ev['City / State']].filter(Boolean).join(' · ');
+      if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
+      if (ev['Pastor']) html += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
+      if (ev['Lodging']) html += '<div class="sched-event-lodging">🏠 ' + ev['Lodging'] + '</div>';
+      if (ev['Notes']) html += '<div class="sched-event-notes">' + ev['Notes'] + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+
+  document.getElementById('sched-body').innerHTML = html;
+}
+
+function openEditModal(rowIdx) {
+  if (!cachedData || !cachedData.schedule) return;
+  var schedFilter = document.getElementById('sched-group-filter');
+  var group = schedFilter ? schedFilter.value : 'all';
+  var filtered = group === 'all' ? cachedData.schedule : cachedData.schedule.filter(function(r) { return (r['Tour Group']||'').toLowerCase() === group; });
+  var ev = filtered[rowIdx];
+  if (!ev) return;
+  editingRow = ev;
+  document.getElementById('edit-modal-title').textContent = 'Edit — ' + (ev['Date']||'');
+  document.getElementById('edit-event-type').value = ev['Event Type'] || '';
+  document.getElementById('edit-church').value = ev['Church Name'] || '';
+  document.getElementById('edit-city').value = ev['City / State'] || '';
+  document.getElementById('edit-pastor').value = ev['Pastor'] || '';
+  document.getElementById('edit-times').value = ev['Service Times'] || '';
+  document.getElementById('edit-lodging').value = ev['Lodging'] || '';
+  document.getElementById('edit-notes').value = ev['Notes'] || '';
+  document.getElementById('edit-tour-group').value = ev['Tour Group'] || '';
+  document.getElementById('edit-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+  document.body.style.overflow = '';
+  editingRow = null;
+}
+
+function saveEdit() {
+  if (!editingRow) return;
+  var updated = {
+    action: 'updateSchedule',
+    tourGroup: document.getElementById('edit-tour-group').value,
+    date: editingRow['Date'],
+    originalEventType: editingRow['Event Type'],
+    eventType: document.getElementById('edit-event-type').value,
+    churchName: document.getElementById('edit-church').value,
+    cityState: document.getElementById('edit-city').value,
+    pastor: document.getElementById('edit-pastor').value,
+    serviceTimes: document.getElementById('edit-times').value,
+    lodging: document.getElementById('edit-lodging').value,
+    notes: document.getElementById('edit-notes').value
+  };
+
+  fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(updated) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        // Update local cache
+        Object.assign(editingRow, {
+          'Event Type': updated.eventType,
+          'Church Name': updated.churchName,
+          'City / State': updated.cityState,
+          'Pastor': updated.pastor,
+          'Service Times': updated.serviceTimes,
+          'Lodging': updated.lodging,
+          'Notes': updated.notes
+        });
+        renderSchedule(cachedData.schedule || []);
+        closeEditModal();
+      }
+    })
+    .catch(function(err) { alert('Save failed: ' + err.message); });
+}
+
 setInterval(loadData, 60000);
 loadData();
 </script>
+<!-- Edit Schedule Modal -->
+<div class="edit-modal" id="edit-modal">
+  <div class="edit-box">
+    <h3 id="edit-modal-title">Edit Event</h3>
+    <input type="hidden" id="edit-row-index">
+    <input type="hidden" id="edit-tour-group">
+    <div class="edit-field"><label>Event Type</label>
+      <select id="edit-event-type">
+        <option>Travel</option>
+        <option>AM Service</option>
+        <option>PM Service</option>
+        <option>AM & PM Service</option>
+        <option>Midweek Service</option>
+        <option>Special</option>
+        <option>Teen Activity</option>
+        <option>College Activity</option>
+        <option>Camp / Conference</option>
+        <option>Rest Day</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="edit-field"><label>Church Name</label><input type="text" id="edit-church"></div>
+    <div class="edit-field"><label>City / State</label><input type="text" id="edit-city"></div>
+    <div class="edit-field"><label>Pastor</label><input type="text" id="edit-pastor"></div>
+    <div class="edit-field"><label>Service Times</label><input type="text" id="edit-times" placeholder="e.g. 10:00 AM / 6:00 PM"></div>
+    <div class="edit-field"><label>Lodging</label><input type="text" id="edit-lodging"></div>
+    <div class="edit-field"><label>Notes</label><textarea id="edit-notes"></textarea></div>
+    <div class="edit-btns">
+      <button class="cancel-btn" onclick="closeEditModal()">Cancel</button>
+      <button class="save-btn" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
