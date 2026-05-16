@@ -947,12 +947,12 @@ function loadSchedule() {
         byDate[date].forEach(function(ev) {
           html += '<div class="schedule-event' + (isToday ? ' today' : '') + '">';
           html += '<div class="event-title">' + (ev['Event'] || ev['Event Title'] || 'Event') + '</div>';
-          if (ev['Service Time']) html += '<div class="event-time">⏰ ' + ev['Service Time'] + '</div>'; else if (ev['Departure Time']) html += '<div class="event-time">🚌 Departs ' + ev['Departure Time'] + '</div>';
+          if (ev['Service Time']) html += '<div class="event-time">⏰ ' + fmtTime(ev['Service Time']) + '</div>'; else if (ev['Departure Time']) html += '<div class="event-time">🚌 Departs ' + fmtTime(ev['Departure Time']) + '</div>';
           var details = [];
           if (ev['Destination']) details.push(ev['Destination']);
           if (ev['City / State']) details.push(ev['City / State']);
-          if (ev['Departure Time']) details.push('Depart: ' + ev['Departure Time']);
-          if (ev['ETA']) details.push('ETA: ' + ev['ETA']);
+          if (ev['Departure Time']) details.push('Depart: ' + fmtTime(ev['Departure Time']));
+          if (ev['ETA']) details.push('ETA: ' + fmtTime(ev['ETA']));
           if (ev['Lodging']) details.push('Lodging: ' + ev['Lodging']);
           if (details.length) html += '<div class="event-detail">' + details.join(' · ') + '</div>';
           if (ev['Notes']) html += '<div class="event-detail" style="margin-top:6px;font-style:italic;color:var(--muted)">' + ev['Notes'] + '</div>';
@@ -971,6 +971,18 @@ function loadSchedule() {
 function formatDate(dateStr) {
   var d = new Date(dateStr + 'T12:00:00');
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function fmtTime(val) {
+  if (!val) return '';
+  var s = String(val);
+  // Google Sheets returns times as 1899-12-31T... ISO strings
+  if (s.indexOf('1899-12-31T') === 0 || s.indexOf('1899-12-30T') === 0) {
+    var d = new Date(s);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+  // Already a plain string like "7:00 PM CDT"
+  return s;
 }
 
 function resetToHome(){
