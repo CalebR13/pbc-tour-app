@@ -91,6 +91,11 @@ td a:hover, .view-link:hover { text-decoration: underline; }
 .error-msg { color: var(--red); font-size: 13px; padding: 20px; text-align: center; }
 
 @media (max-width: 600px) { .chart-row { grid-template-columns: 1fr; } }
+.sched-lodging { display: flex; align-items: center; justify-content: space-between; background: rgba(123,175,248,0.08); border: 1px solid rgba(123,175,248,0.2); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 8px; }
+.sched-lodging-pink { background: rgba(232,121,160,0.08); border-color: rgba(232,121,160,0.2); }
+.sched-lodging-text { font-size: 12px; color: var(--text); display: flex; align-items: center; gap: 6px; flex: 1; }
+.sched-lodging-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.sched-no-lodging { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 8px; }
 
 .sched-day { margin-bottom: 20px; }
 .sched-date { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
@@ -274,7 +279,7 @@ function renderAll(data) {
   renderEvaluations(filterRows(data.evaluations || []));
   renderContacts(filterRows(data.infocards || []));
   renderLog(filterRows(data.log || []));
-  renderSchedule(data.schedule || []);
+  renderSchedule(data.schedule || [], data.lodging || []);
 }
 
 function renderFinances(rows) {
@@ -488,9 +493,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // ── SCHEDULE ──────────────────────────────────────────────────
 var editingRow = null;
 
-function renderSchedule(rows) {
+function renderSchedule(rows, lodgingRows) {
+  if (lodgingRows === undefined) lodgingRows = (cachedData && cachedData.lodging) ? cachedData.lodging : [];
   var group = activeFilter;
   var filtered = group === 'all' ? rows : rows.filter(function(r) { return (r['Tour Group']||'').toLowerCase() === group; });
+  var filteredLodging = group === 'all' ? lodgingRows : lodgingRows.filter(function(r) { return (r['Tour Group']||'').toLowerCase() === group; });
+
+  // Build lodging lookup by normalized date + group
+  var lodgingByKey = {};
+  filteredLodging.forEach(function(l) {
+    var raw = String(l['Date'] || '');
+    var d = raw.indexOf('T') > -1 || raw.match(/^\d{4}-\d{2}-\d{2}/) ? new Date(raw).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : new Date(raw+', 2026').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    var key = d + '|' + (l['Tour Group']||'').toLowerCase();
+    if (!lodgingByKey[key]) lodgingByKey[key] = [];
+    lodgingByKey[key].push(l);
+  });
 
   if (!filtered.length) { document.getElementById('sched-body').innerHTML = '<div class="empty">No schedule data yet.</div>'; return; }
 
@@ -535,7 +552,7 @@ function renderSchedule(rows) {
       var loc = [ev['Destination Church'],ev['Destination City, State']].filter(Boolean).join(' · ');
       if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
       if (ev['Pastor']) html += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
-      if (ev['Lodging']) html += '<div class="sched-event-lodging">🛏️ ' + ev['Lodging'] + '</div>';
+
       if (ev['Leader Notes']) html += '<div class="sched-event-notes">' + ev['Leader Notes'] + '</div>';
       html += '</div>';
     });
@@ -635,6 +652,58 @@ function saveEdit() {
     .catch(function(err) { alert('Save failed: ' + err.message); });
 }
 
+function editLodging(dateStr, group) {
+  var lKey = dateStr + '|' + group;
+  var lEntries = [];
+  if (cachedData && cachedData.lodging) {
+    lEntries = cachedData.lodging.filter(function(l) {
+      var raw = String(l['Date']||'');
+      var d = raw.indexOf('T')>-1||raw.match(/^\d{4}-\d{2}-\d{2}/) ? new Date(raw).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : new Date(raw+', 2026').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+      return d === dateStr && (l['Tour Group']||'').toLowerCase() === group;
+    });
+  }
+  var l = lEntries[0] || {};
+  document.getElementById('lodging-modal-title').textContent = (group==='ladies'?"Ladies'":"Men's") + ' Lodging — ' + dateStr;
+  document.getElementById('lodging-date').value = dateStr;
+  document.getElementById('lodging-group').value = group;
+  document.getElementById('lodging-location').value = l['Lodging Location'] || '';
+  document.getElementById('lodging-address').value = l['Address'] || '';
+  document.getElementById('lodging-contact').value = l['Contact'] || '';
+  document.getElementById('lodging-notes').value = l['Notes'] || '';
+  document.getElementById('lodging-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLodgingModal() {
+  document.getElementById('lodging-modal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function saveLodging() {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify({
+      action: 'updateLodging',
+      tourGroup: document.getElementById('lodging-group').value,
+      date: document.getElementById('lodging-date').value,
+      lodgingLocation: document.getElementById('lodging-location').value,
+      address: document.getElementById('lodging-address').value,
+      contact: document.getElementById('lodging-contact').value,
+      notes: document.getElementById('lodging-notes').value
+    })
+  }).then(function(r){return r.json();}).then(function(d){ if(d.success){loadData();closeLodgingModal();}else{alert('Save failed');}}).catch(function(e){alert('Save failed: '+e.message);});
+}
+
+function deleteLodging(dateStr, group) {
+  if (!confirm('Remove lodging for ' + (group==='ladies'?"Ladies'":"Men's") + ' on ' + dateStr + '?')) return;
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify({ action: 'deleteLodging', tourGroup: group, date: dateStr })
+  }).then(function(r){return r.json();}).then(function(d){if(d.success)loadData();else alert('Delete failed');}).catch(function(e){alert('Delete failed: '+e.message);});
+}
+
 setInterval(loadData, 60000);
 loadData();
 </script>
@@ -669,6 +738,23 @@ loadData();
     <div class="edit-btns">
       <button class="cancel-btn" onclick="closeEditModal()">Cancel</button>
       <button class="save-btn" onclick="saveEdit()" id="save-btn-label">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lodging Edit Modal -->
+<div class="edit-modal" id="lodging-modal">
+  <div class="edit-box">
+    <h3 id="lodging-modal-title">Edit Lodging</h3>
+    <input type="hidden" id="lodging-date">
+    <input type="hidden" id="lodging-group">
+    <div class="edit-field"><label>Lodging Location</label><input type="text" id="lodging-location" placeholder="e.g. Heritage Baptist Church, Motel 6"></div>
+    <div class="edit-field"><label>Address</label><input type="text" id="lodging-address" placeholder="Street address"></div>
+    <div class="edit-field"><label>Contact</label><input type="text" id="lodging-contact" placeholder="Pastor name or phone"></div>
+    <div class="edit-field"><label>Notes</label><textarea id="lodging-notes" placeholder="Any additional lodging notes..."></textarea></div>
+    <div class="edit-btns">
+      <button class="cancel-btn" onclick="closeLodgingModal()">Cancel</button>
+      <button class="save-btn" onclick="saveLodging()">Save Lodging</button>
     </div>
   </div>
 </div>
