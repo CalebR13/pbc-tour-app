@@ -306,7 +306,7 @@ function renderFinances(rows) {
   } else {
     rows.slice().reverse().forEach(function(r) {
       var amt = parseFloat(r['Amount ($)']) || 0;
-      var link = r['Receipt Link'] && r['Receipt Link'].indexOf('http') === 0 ? '<span class="view-link" onclick="openLightbox(\'' + r['Receipt Link'] + '\')">View</span>' : '-';
+      var link = r['Receipt Link'] && r['Receipt Link'].indexOf('http') === 0 ? '<a href="' + r['Receipt Link'] + '" target="_blank">View</a>' : '-';
       html += '<tr><td style="font-family:\'DM Mono\',monospace;font-size:12px">' + fmtDate(r['Expense Date']) + '</td><td style="color:var(--red);font-family:\'DM Mono\',monospace">$' + amt.toFixed(2) + '</td><td><span class="badge badge-gold">' + (r['Category'] || '-') + '</span></td><td style="color:var(--muted)">' + (r['Submitted By'] || '-') + '</td><td>' + link + '</td></tr>';
     });
   }
@@ -414,7 +414,7 @@ function renderContacts(rows) {
       if (r['Interests']) html += '<div class="contact-interests">' + r['Interests'] + '</div>';
       if (r['Majors of Interest']) html += '<div style="font-size:11px;color:var(--muted);margin-top:4px">' + r['Majors of Interest'] + '</div>';
       if (r['Submitted By']) html += '<div style="font-size:12px;color:var(--gold);margin-top:6px;font-weight:500">' + r['Submitted By'] + '</div>';
-      if (hasPhoto) html += '<div style="margin-top:8px"><span class="view-link" style="color:var(--green)" onclick="openLightbox(\'' + r['Interest Form Photo Link'] + '\')">View Maverick Club card</span></div>';
+      if (hasPhoto) html += '<div style="margin-top:8px"><a href="' + r['Interest Form Photo Link'] + '" target="_blank" style="color:var(--green);font-size:12px">View Maverick Club card</a></div>';
       html += '</div>';
     });
   }
