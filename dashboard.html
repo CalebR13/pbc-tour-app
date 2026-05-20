@@ -493,6 +493,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // ── SCHEDULE ──────────────────────────────────────────────────
 var editingRow = null;
 
+function escapeDateStr(s) { return s.replace(/'/g, '&#39;'); }
+
 function renderSchedule(rows, lodgingRows) {
   if (lodgingRows === undefined) lodgingRows = (cachedData && cachedData.lodging) ? cachedData.lodging : [];
   var group = activeFilter;
@@ -552,7 +554,7 @@ function renderSchedule(rows, lodgingRows) {
 
     // Events
     if (events.length === 0) {
-      html += '<div class="sched-event" style="border-style:dashed;opacity:0.4;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--dim)">No events</span><button class="edit-btn" onclick="openAddModal('' + dateStr.replace(/'/g,"\'") + '','' + (group==='all'?'ladies':group) + '')">+ Add</button></div>';
+      html += '<div class="sched-event" style="border-style:dashed;opacity:0.4;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--dim)">No events</span><button class="edit-btn" onclick="openAddModal('' + escapeDateStr(dateStr) + '','' + (group==='all'?'ladies':group) + '')">+ Add</button></div>';
     } else {
       events.forEach(function(ev) {
         var rowIdx = filtered.indexOf(ev);
@@ -573,7 +575,7 @@ function renderSchedule(rows, lodgingRows) {
         html += '</div>';
       });
       // Add event button for additional events
-      html += '<div style="text-align:right;margin-top:4px"><button class="edit-btn" onclick="openAddModal('' + dateStr.replace(/'/g,"\'") + '','' + (group==='all'?'ladies':group) + '')">+ Add event</button></div>';
+      html += '<div style="text-align:right;margin-top:4px"><button class="edit-btn" onclick="openAddModal('' + escapeDateStr(dateStr) + '','' + (group==='all'?'ladies':group) + '')">+ Add event</button></div>';
     }
 
     // Lodging - always shown at bottom, one row per group, editable not deletable
@@ -592,7 +594,7 @@ function renderSchedule(rows, lodgingRows) {
       var lNotes = lEntries.length && lEntries[0]['Notes'] ? ' <span style="color:var(--dim);font-size:11px;font-style:italic">— ' + lEntries[0]['Notes'] + '</span>' : '';
       html += '<div style="display:flex;align-items:center;justify-content:space-between;background:' + lBg + ';border:1px solid ' + lBorderColor + ';border-radius:6px;padding:7px 10px">';
       html += '<div style="font-size:12px;color:var(--text)">🛏️ ' + lBadge + lText + lContact + lNotes + '</div>';
-      html += '<button class="edit-btn" onclick="editLodging('' + dateStr.replace(/'/g,"\'") + '','' + g + '')">' + (lEntries.length && lEntries[0]['Lodging Location'] ? 'Edit' : '+ Add') + '</button>';
+      html += '<button class="edit-btn" onclick="editLodging('' + escapeDateStr(dateStr) + '','' + g + '')">' + (lEntries.length && lEntries[0]['Lodging Location'] ? 'Edit' : '+ Add') + '</button>';
       html += '</div>';
     });
     html += '</div>';
