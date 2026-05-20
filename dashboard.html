@@ -497,67 +497,109 @@ function renderSchedule(rows, lodgingRows) {
   if (lodgingRows === undefined) lodgingRows = (cachedData && cachedData.lodging) ? cachedData.lodging : [];
   var group = activeFilter;
   var filtered = group === 'all' ? rows : rows.filter(function(r) { return (r['Tour Group']||'').toLowerCase() === group; });
-  var filteredLodging = group === 'all' ? lodgingRows : lodgingRows.filter(function(r) { return (r['Tour Group']||'').toLowerCase() === group; });
 
   // Build lodging lookup by normalized date + group
   var lodgingByKey = {};
-  filteredLodging.forEach(function(l) {
+  lodgingRows.forEach(function(l) {
     var raw = String(l['Date'] || '');
-    var d = raw.indexOf('T') > -1 || raw.match(/^\d{4}-\d{2}-\d{2}/) ? new Date(raw).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : new Date(raw+', 2026').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    var d;
+    if (raw.indexOf('T') > -1 || /^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      d = new Date(raw).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    } else {
+      d = new Date(raw + ', 2026').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    }
     var key = d + '|' + (l['Tour Group']||'').toLowerCase();
     if (!lodgingByKey[key]) lodgingByKey[key] = [];
     lodgingByKey[key].push(l);
   });
 
-  if (!filtered.length) { document.getElementById('sched-body').innerHTML = '<div class="empty">No schedule data yet.</div>'; return; }
-
-  var byDate = {};
+  // Build events lookup by normalized date
+  var eventsByDate = {};
   filtered.forEach(function(r) {
-    var raw = r['Date'] || '';
-    var d = raw;
-    // Handle Google Sheets timestamp (e.g. 2026-05-16T05:00:00.000Z)
-    if (raw.indexOf('T') > -1) {
-      var dt = new Date(raw);
-      d = dt.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+    var raw = String(r['Date'] || '');
+    var d;
+    if (raw.indexOf('T') > -1 || /^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      d = new Date(raw).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    } else {
+      d = new Date(raw + ', 2026').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
     }
-    r['_displayDate'] = d;
-    if(!byDate[d]) byDate[d]=[];
-    byDate[d].push(r);
+    if (!eventsByDate[d]) eventsByDate[d] = [];
+    eventsByDate[d].push(r);
   });
+
   var todayStr = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-  var dates = Object.keys(byDate).sort(function(a,b) {
-    return new Date(a) - new Date(b);
-  });
+  var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  var ladiesSel = group === 'ladies' ? ' selected' : '';
-  var mensSel = group === 'mens' ? ' selected' : '';
+  // Generate all dates May 16 - Aug 2 2026
+  var start = new Date('2026-05-16T12:00:00');
+  var end = new Date('2026-08-02T12:00:00');
   var html = '';
+  var cur = new Date(start);
 
-  dates.forEach(function(date) {
-    var isToday = date === todayStr;
+  while (cur <= end) {
+    var dateStr = cur.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    var dayName = DAYS[cur.getDay()];
+    var isToday = dateStr === todayStr;
+    var events = eventsByDate[dateStr] || [];
+    var groupsToShow = group === 'all' ? ['ladies','mens'] : [group];
+
     html += '<div class="sched-day">';
-    html += '<div class="sched-date' + (isToday?' today':'') + '">' + date + (byDate[date][0] && byDate[date][0]['Day of Week'] ? ' — ' + byDate[date][0]['Day of Week'] : '') + (isToday?' ★ TODAY':'') + '</div>';
-    byDate[date].forEach(function(ev, idx) {
-      var rowIdx = filtered.indexOf(ev);
-      var evGroup = (ev['Tour Group'] || '').toLowerCase();
-      var borderColor = evGroup === 'ladies' ? '#E879A0' : evGroup === 'mens' ? '#7BAFF8' : 'rgba(255,255,255,0.08)';
-      var badgeBg = evGroup === 'ladies' ? 'rgba(232,121,160,0.18)' : 'rgba(123,175,248,0.15)';
-      var badgeColor = evGroup === 'ladies' ? '#E879A0' : '#7BAFF8';
-      var badgeLabel = evGroup === 'ladies' ? "Ladies'" : evGroup === 'mens' ? "Men's" : '';
-      var badge = badgeLabel ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:' + badgeBg + ';color:' + badgeColor + ';margin-left:8px">' + badgeLabel + '</span>' : '';
-      html += '<div class="sched-event' + (isToday?' today':'') + '" style="border-left:3px solid ' + borderColor + ';padding-left:12px">';
-      var evType = ev['Event'] || '';
-      html += '<div class="sched-event-title"><span>' + (evType||'—') + badge + '</span><div style="display:flex;gap:4px"><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button><button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteEvent(' + rowIdx + ')">✕</button></div></div>';
-      if (ev['Event time']) html += '<div class="sched-event-time">⏰ ' + ev['Event time'] + '</div>';
-      var loc = [ev['Destination Church'],ev['Destination City, State']].filter(Boolean).join(' · ');
-      if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
-      if (ev['Pastor']) html += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
+    html += '<div class="sched-date' + (isToday?' today':'') + '">';
+    html += MONTHS[cur.getMonth()] + ' ' + cur.getDate() + ' — ' + dayName;
+    if (isToday) html += ' ★ TODAY';
+    html += '</div>';
 
-      if (ev['Leader Notes']) html += '<div class="sched-event-notes">' + ev['Leader Notes'] + '</div>';
+    // Events
+    if (events.length === 0) {
+      html += '<div class="sched-event" style="border-style:dashed;opacity:0.4;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--dim)">No events</span><button class="edit-btn" onclick="openAddModal('' + dateStr.replace(/'/g,"\'") + '','' + (group==='all'?'ladies':group) + '')">+ Add</button></div>';
+    } else {
+      events.forEach(function(ev) {
+        var rowIdx = filtered.indexOf(ev);
+        var evGroup = (ev['Tour Group']||'').toLowerCase();
+        var borderColor = evGroup==='ladies' ? '#E879A0' : evGroup==='mens' ? '#7BAFF8' : 'rgba(255,255,255,0.08)';
+        var badgeBg = evGroup==='ladies' ? 'rgba(232,121,160,0.18)' : 'rgba(123,175,248,0.15)';
+        var badgeColor = evGroup==='ladies' ? '#E879A0' : '#7BAFF8';
+        var badgeLabel = evGroup==='ladies' ? "Ladies'" : evGroup==='mens' ? "Men's" : '';
+        var badge = badgeLabel ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:' + badgeBg + ';color:' + badgeColor + ';margin-left:8px">' + badgeLabel + '</span>' : '';
+        html += '<div class="sched-event' + (isToday?' today':'') + '" style="border-left:3px solid ' + borderColor + ';padding-left:12px">';
+        var evType = ev['Event'] || '';
+        html += '<div class="sched-event-title"><span>' + (evType||'—') + badge + '</span><div style="display:flex;gap:4px"><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button><button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteEvent(' + rowIdx + ')">✕</button></div></div>';
+        if (ev['Event time']) html += '<div class="sched-event-time">⏰ ' + ev['Event time'] + '</div>';
+        var loc = [ev['Destination Church'],ev['Destination City, State']].filter(Boolean).join(' · ');
+        if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
+        if (ev['Pastor']) html += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
+        if (ev['Leader Notes']) html += '<div class="sched-event-notes">' + ev['Leader Notes'] + '</div>';
+        html += '</div>';
+      });
+      // Add event button for additional events
+      html += '<div style="text-align:right;margin-top:4px"><button class="edit-btn" onclick="openAddModal('' + dateStr.replace(/'/g,"\'") + '','' + (group==='all'?'ladies':group) + '')">+ Add event</button></div>';
+    }
+
+    // Lodging - always shown at bottom, one row per group, editable not deletable
+    html += '<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">';
+    groupsToShow.forEach(function(g) {
+      var lKey = dateStr + '|' + g;
+      var lEntries = lodgingByKey[lKey] || [];
+      var lPink = g === 'ladies';
+      var lBorderColor = lPink ? 'rgba(232,121,160,0.3)' : 'rgba(123,175,248,0.2)';
+      var lBg = lPink ? 'rgba(232,121,160,0.07)' : 'rgba(123,175,248,0.07)';
+      var lBadgeColor = lPink ? '#E879A0' : '#7BAFF8';
+      var lBadgeBg = lPink ? 'rgba(232,121,160,0.18)' : 'rgba(123,175,248,0.15)';
+      var lBadge = group === 'all' ? '<span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;background:' + lBadgeBg + ';color:' + lBadgeColor + ';margin-right:6px">' + (g==='ladies'?"Ladies'":"Men's") + '</span>' : '';
+      var lText = lEntries.length && lEntries[0]['Lodging Location'] ? lEntries[0]['Lodging Location'] : '<span style="color:var(--dim);font-style:italic">Not set</span>';
+      var lContact = lEntries.length && lEntries[0]['Contact'] ? ' · ' + lEntries[0]['Contact'] : '';
+      var lNotes = lEntries.length && lEntries[0]['Notes'] ? ' <span style="color:var(--dim);font-size:11px;font-style:italic">— ' + lEntries[0]['Notes'] + '</span>' : '';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;background:' + lBg + ';border:1px solid ' + lBorderColor + ';border-radius:6px;padding:7px 10px">';
+      html += '<div style="font-size:12px;color:var(--text)">🛏️ ' + lBadge + lText + lContact + lNotes + '</div>';
+      html += '<button class="edit-btn" onclick="editLodging('' + dateStr.replace(/'/g,"\'") + '','' + g + '')">' + (lEntries.length && lEntries[0]['Lodging Location'] ? 'Edit' : '+ Add') + '</button>';
       html += '</div>';
     });
     html += '</div>';
-  });
+
+    html += '</div>'; // close sched-day
+    cur.setDate(cur.getDate() + 1);
+  }
 
   document.getElementById('sched-body').innerHTML = html;
 }
@@ -695,14 +737,7 @@ function saveLodging() {
   }).then(function(r){return r.json();}).then(function(d){ if(d.success){loadData();closeLodgingModal();}else{alert('Save failed');}}).catch(function(e){alert('Save failed: '+e.message);});
 }
 
-function deleteLodging(dateStr, group) {
-  if (!confirm('Remove lodging for ' + (group==='ladies'?"Ladies'":"Men's") + ' on ' + dateStr + '?')) return;
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify({ action: 'deleteLodging', tourGroup: group, date: dateStr })
-  }).then(function(r){return r.json();}).then(function(d){if(d.success)loadData();else alert('Delete failed');}).catch(function(e){alert('Delete failed: '+e.message);});
-}
+// deleteLodging removed — lodging is permanent per day
 
 setInterval(loadData, 60000);
 loadData();
