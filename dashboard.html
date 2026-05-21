@@ -492,6 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── SCHEDULE ──────────────────────────────────────────────────
 var editingRow = null;
+var editingLodgingOriginal = null;
 
 function escapeDateStr(s) { return s.replace(/'/g, '&#39;'); }
 
@@ -783,7 +784,6 @@ function saveEdit() {
 }
 
 function editLodging(dateStr, group) {
-  var lKey = dateStr + '|' + group;
   var lEntries = [];
   if (cachedData && cachedData.lodging) {
     lEntries = cachedData.lodging.filter(function(l) {
@@ -793,6 +793,14 @@ function editLodging(dateStr, group) {
     });
   }
   var l = lEntries[0] || {};
+  editingLodgingOriginal = lEntries.length ? {
+    tourGroup: l['Tour Group'] || group,
+    date: l['Date'] || dateStr,
+    lodgingLocation: l['Lodging Location'] || '',
+    address: l['Address'] || '',
+    contact: l['Contact'] || '',
+    notes: l['Notes'] || ''
+  } : null;
   document.getElementById('lodging-modal-title').textContent = (group==='ladies'?"Ladies'":"Men's") + ' Lodging — ' + dateStr;
   document.getElementById('lodging-date').value = dateStr;
   document.getElementById('lodging-group').value = group;
@@ -807,22 +815,25 @@ function editLodging(dateStr, group) {
 function closeLodgingModal() {
   document.getElementById('lodging-modal').classList.remove('show');
   document.body.style.overflow = '';
+  editingLodgingOriginal = null;
 }
 
 function saveLodging() {
+  var payload = {
+    action: 'updateLodging',
+    tourGroup: document.getElementById('lodging-group').value,
+    date: document.getElementById('lodging-date').value,
+    lodgingLocation: document.getElementById('lodging-location').value,
+    address: document.getElementById('lodging-address').value,
+    contact: document.getElementById('lodging-contact').value,
+    notes: document.getElementById('lodging-notes').value
+  };
+  if (editingLodgingOriginal) payload.original = editingLodgingOriginal;
   fetch(SCRIPT_URL, {
     method: 'POST',
     headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify({
-      action: 'updateLodging',
-      tourGroup: document.getElementById('lodging-group').value,
-      date: document.getElementById('lodging-date').value,
-      lodgingLocation: document.getElementById('lodging-location').value,
-      address: document.getElementById('lodging-address').value,
-      contact: document.getElementById('lodging-contact').value,
-      notes: document.getElementById('lodging-notes').value
-    })
-  }).then(function(r){return r.json();}).then(function(d){ if(d.success){loadData();closeLodgingModal();}else{alert('Save failed');}}).catch(function(e){alert('Save failed: '+e.message);});
+    body: JSON.stringify(payload)
+  }).then(function(r){return r.json();}).then(function(d){ if(d.success){loadData();closeLodgingModal();}else{alert('Save failed: ' + (d.error || 'unknown error'));}}).catch(function(e){alert('Save failed: '+e.message);});
 }
 
 // deleteLodging removed — lodging is permanent per day

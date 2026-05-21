@@ -654,16 +654,37 @@ function updateLodging(ss, d) {
   var headers = data[0];
   var groupCol = headers.indexOf("Tour Group");
   var dateCol = headers.indexOf("Date");
+  var locationCol = headers.indexOf("Lodging Location");
+  var addressCol = headers.indexOf("Address");
+  var contactCol = headers.indexOf("Contact");
+  var notesCol = headers.indexOf("Notes");
   for (var i = 1; i < data.length; i++) {
-    if (String(data[i][groupCol]) === d.tourGroup && String(data[i][dateCol]) === d.date) {
-      sheet.getRange(i+1, headers.indexOf("Lodging Location")+1).setValue(d.lodgingLocation||"");
-      sheet.getRange(i+1, headers.indexOf("Address")+1).setValue(d.address||"");
-      sheet.getRange(i+1, headers.indexOf("Contact")+1).setValue(d.contact||"");
-      sheet.getRange(i+1, headers.indexOf("Notes")+1).setValue(d.notes||"");
+    if (lodgingRowMatches(data[i], headers, d.original) ||
+      (String(data[i][groupCol]) === d.tourGroup && normalizeDate(String(data[i][dateCol])) === normalizeDate(String(d.date)))) {
+      sheet.getRange(i+1, locationCol+1).setValue(d.lodgingLocation||"");
+      sheet.getRange(i+1, addressCol+1).setValue(d.address||"");
+      sheet.getRange(i+1, contactCol+1).setValue(d.contact||"");
+      sheet.getRange(i+1, notesCol+1).setValue(d.notes||"");
       return;
     }
   }
   addLodging(ss, d);
+}
+
+function lodgingRowMatches(row, headers, original) {
+  if (!original) return false;
+  var groupCol = headers.indexOf("Tour Group");
+  var dateCol = headers.indexOf("Date");
+  var locationCol = headers.indexOf("Lodging Location");
+  var addressCol = headers.indexOf("Address");
+  var contactCol = headers.indexOf("Contact");
+  var notesCol = headers.indexOf("Notes");
+  return String(row[groupCol] || "") === String(original.tourGroup || "") &&
+    normalizeDate(String(row[dateCol] || "")) === normalizeDate(String(original.date || "")) &&
+    String(row[locationCol] || "") === String(original.lodgingLocation || "") &&
+    String(row[addressCol] || "") === String(original.address || "") &&
+    String(row[contactCol] || "") === String(original.contact || "") &&
+    String(row[notesCol] || "") === String(original.notes || "");
 }
 
 function deleteLodging(ss, d) {
