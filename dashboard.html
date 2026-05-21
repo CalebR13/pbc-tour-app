@@ -569,7 +569,7 @@ function renderSchedule(rows, lodgingRows) {
         var evType = ev['Event'] || '';
         html += '<div class="sched-event-title"><span>' + (evType||'—') + badge + '</span><div style="display:flex;gap:4px"><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button><button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteEvent(' + rowIdx + ')">✕</button></div></div>';
         if (ev['Event time']) html += '<div class="sched-event-time">⏰ ' + ev['Event time'] + '</div>';
-        var loc = [ev['Destination Church'],ev['Destination City, State']].filter(Boolean).join(' · ');
+        var loc = [ev['Destination'],ev['Destination City, State']].filter(Boolean).join(' · ');
         if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
         if (ev['Pastor']) html += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
         if (ev['Leader Notes']) html += '<div class="sched-event-notes">' + ev['Leader Notes'] + '</div>';
@@ -617,11 +617,11 @@ function openEditModal(rowIdx) {
   editingRow = ev;
   document.getElementById('edit-modal-title').textContent = 'Edit — ' + (ev['Date']||'');
   document.getElementById('edit-event-type').value = ev['Event Type'] || '';
-  document.getElementById('edit-church').value = ev['Destination Church'] || '';
+  document.getElementById('edit-church').value = ev['Destination'] || '';
   document.getElementById('edit-city').value = ev['Destination City, State'] || '';
   document.getElementById('edit-pastor').value = ev['Pastor'] || '';
   document.getElementById('edit-times').value = ev['Event time'] || '';
-  document.getElementById('edit-lodging').value = ev['Lodging'] || '';
+
   document.getElementById('edit-notes').value = ev['Leader Notes'] || '';
   document.getElementById('edit-tour-group').value = ev['Tour Group'] || '';
   document.getElementById('save-btn-label').textContent = 'Save Changes';
@@ -770,12 +770,11 @@ loadData();
         <option>Other</option>
       </select>
     </div>
-    <div class="edit-field"><label>Location Name</label><input type="text" id="edit-church"></div>
+    <div class="edit-field"><label>Destination</label><input type="text" id="edit-church"></div>
     <div class="edit-field"><label>City / State</label><input type="text" id="edit-city"></div>
     <div class="edit-field"><label>Pastor</label><input type="text" id="edit-pastor"></div>
     <div class="edit-field"><label>Event Time</label><input type="text" id="edit-times" placeholder="e.g. 10:00 AM / 6:00 PM"></div>
-    <div class="edit-field"><label>Lodging</label><input type="text" id="edit-lodging"></div>
-    <div class="edit-field"><label>Notes</label><textarea id="edit-notes"></textarea></div>
+    <div class="edit-field"><label>Leader Notes</label><textarea id="edit-notes"></textarea></div>
     <div class="edit-btns">
       <button class="cancel-btn" onclick="closeEditModal()">Cancel</button>
       <button class="save-btn" onclick="saveEdit()" id="save-btn-label">Save Changes</button>
