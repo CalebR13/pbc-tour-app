@@ -143,9 +143,9 @@ function doPost(e) {
     }
 
     if (data.action === "updateLodging") {
-      updateLodging(ss, data);
+      var updatedLodging = updateLodging(ss, data);
       return ContentService
-        .createTextOutput(JSON.stringify({ success: true }))
+        .createTextOutput(JSON.stringify({ success: updatedLodging, error: updatedLodging ? "" : "No existing lodging row found for this date/group" }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -649,7 +649,7 @@ function addLodging(ss, d) {
 
 function updateLodging(ss, d) {
   var sheet = ss.getSheetByName(SHEET_NAMES.lodging);
-  if (!sheet) return;
+  if (!sheet) return false;
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
   var groupCol = headers.indexOf("Tour Group");
@@ -658,17 +658,19 @@ function updateLodging(ss, d) {
   var addressCol = headers.indexOf("Address");
   var contactCol = headers.indexOf("Contact");
   var notesCol = headers.indexOf("Notes");
+  var normalizedIncomingGroup = normalizeTourGroup(d.tourGroup);
+  var normalizedIncomingDate = normalizeDate(String(d.date || ""));
   for (var i = 1; i < data.length; i++) {
     if (lodgingRowMatches(data[i], headers, d.original) ||
-      (String(data[i][groupCol]) === d.tourGroup && normalizeDate(String(data[i][dateCol])) === normalizeDate(String(d.date)))) {
+      (normalizeTourGroup(String(data[i][groupCol])) === normalizedIncomingGroup && normalizeDate(String(data[i][dateCol])) === normalizedIncomingDate)) {
       sheet.getRange(i+1, locationCol+1).setValue(d.lodgingLocation||"");
       sheet.getRange(i+1, addressCol+1).setValue(d.address||"");
       sheet.getRange(i+1, contactCol+1).setValue(d.contact||"");
       sheet.getRange(i+1, notesCol+1).setValue(d.notes||"");
-      return;
+      return true;
     }
   }
-  addLodging(ss, d);
+  return false;
 }
 
 function lodgingRowMatches(row, headers, original) {
@@ -679,12 +681,19 @@ function lodgingRowMatches(row, headers, original) {
   var addressCol = headers.indexOf("Address");
   var contactCol = headers.indexOf("Contact");
   var notesCol = headers.indexOf("Notes");
-  return String(row[groupCol] || "") === String(original.tourGroup || "") &&
+  return normalizeTourGroup(String(row[groupCol] || "")) === normalizeTourGroup(String(original.tourGroup || "")) &&
     normalizeDate(String(row[dateCol] || "")) === normalizeDate(String(original.date || "")) &&
     String(row[locationCol] || "") === String(original.lodgingLocation || "") &&
     String(row[addressCol] || "") === String(original.address || "") &&
     String(row[contactCol] || "") === String(original.contact || "") &&
     String(row[notesCol] || "") === String(original.notes || "");
+}
+
+function normalizeTourGroup(val) {
+  var g = String(val || "").toLowerCase().trim();
+  if (g === "mens" || g === "men's" || g === "men") return "men";
+  if (g === "ladies" || g === "ladies'") return "ladies";
+  return g;
 }
 
 function deleteLodging(ss, d) {
