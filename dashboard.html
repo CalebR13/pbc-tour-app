@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PBC Tour Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #2a2a2a; --surface: #333; --surface2: #3d3d3d;
+  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.16);
+  --text: #f0ede8; --muted: #9a9590; --dim: #5a5550;
+  --gold: #f7b214; --gold-bg: rgba(247,178,20,0.12);
+  --green: #2ECC8A; --green-bg: rgba(46,204,138,0.1);
+  --red: #E05555; --red-bg: rgba(224,85,85,0.1);
+  --blue: #7BAFF8; --blue-bg: rgba(123,175,248,0.1);
+  --radius: 10px; --radius-sm: 6px;
+}
+body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 3px solid var(--gold); background: var(--bg); }
+.topbar h1 { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+.topbar h1 span { color: var(--gold); }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.live-badge { display: flex; align-items: center; gap: 6px; background: var(--gold-bg); border: 1px solid rgba(247,178,20,0.3); padding: 5px 12px; border-radius: 20px; font-size: 12px; color: var(--gold); font-weight: 500; }
+.live-dot { width: 6px; height: 6px; background: var(--gold); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.refresh-btn { background: var(--surface); border: 1px solid var(--border2); color: var(--muted); padding: 6px 14px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 13px; cursor: pointer; }
+.refresh-btn:hover { color: var(--text); border-color: var(--gold); }
+.filter-bar { display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.filter-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.filter-btn { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; font-family: 'Montserrat', sans-serif; cursor: pointer; border: 1px solid var(--border2); background: transparent; color: var(--muted); transition: all 0.2s; }
+.filter-btn.active { background: var(--surface2); border-color: var(--gold); color: var(--gold); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; overscroll-behavior-x: contain; scroll-snap-type: x proximity; }
+.tab { padding: 12px 18px; font-size: 13px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.panel { display: none; padding: 24px; }
+.panel.active { display: block; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+.metric-value { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; }
+.metric-value.green { color: var(--green); }
+.metric-value.red { color: var(--red); }
+.metric-value.gold { color: var(--gold); }
+.metric-value.blue { color: var(--blue); }
+.metric-sub { font-size: 11px; color: var(--dim); margin-top: 4px; }
+.chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+.chart-title { font-size: 11px; color: var(--muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.06em; }
+.chart-wrap canvas { max-height: 200px; }
+.table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; }
+.table-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.table-head h3 { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+.export-btn { background: var(--surface2); border: 1px solid var(--border2); color: var(--muted); padding: 5px 12px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; }
+.export-btn:hover { border-color: var(--gold); color: var(--gold); }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 16px; color: var(--dim); font-weight: 400; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 11px 16px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+td a, .view-link { color: var(--blue); text-decoration: none; cursor: pointer; font-size: 12px; }
+td a:hover, .view-link:hover { text-decoration: underline; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.badge-green { background: var(--green-bg); color: var(--green); }
+.badge-gold { background: var(--gold-bg); color: var(--gold); }
+.badge-blue { background: var(--blue-bg); color: var(--blue); }
+.eval-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 12px; }
+.eval-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.eval-church { font-weight: 500; font-size: 15px; }
+.eval-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.eval-score { font-family: 'DM Mono', monospace; font-size: 20px; color: var(--gold); }
+.bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.bar-label { font-size: 11px; color: var(--muted); width: 80px; flex-shrink: 0; }
+.bar-bg { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; }
+.bar-fill { height: 100%; border-radius: 2px; background: var(--gold); }
+.bar-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--dim); width: 14px; }
+.contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+.contact-name { font-weight: 500; font-size: 15px; margin-bottom: 4px; }
+.contact-meta { font-size: 12px; color: var(--muted); line-height: 1.7; }
+.contact-interests { font-size: 11px; color: var(--blue); margin-top: 6px; }
+.log-item { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.log-item:last-child { border-bottom: none; }
+.log-time { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--dim); white-space: nowrap; min-width: 90px; }
+.empty { text-align: center; padding: 32px; color: var(--dim); font-size: 13px; }
+.spinner { width: 28px; height: 28px; border: 2px solid var(--border2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+.error-msg { color: var(--red); font-size: 13px; padding: 20px; text-align: center; }
+
+@media (max-width: 600px) { .chart-row { grid-template-columns: 1fr; } }
+.sched-lodging { display: flex; align-items: center; justify-content: space-between; background: rgba(123,175,248,0.08); border: 1px solid rgba(123,175,248,0.2); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 8px; }
+.sched-lodging-pink { background: rgba(232,121,160,0.08); border-color: rgba(232,121,160,0.2); }
+.sched-lodging-text { font-size: 12px; color: var(--text); display: flex; align-items: center; gap: 6px; flex: 1; }
+.sched-lodging-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.sched-no-lodging { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 8px; }
+
+.sched-day { margin-bottom: 20px; }
+.sched-date { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.sched-date.today { color: var(--gold); border-bottom-color: var(--gold); }
+.sched-event { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 8px; position: relative; }
+.sched-event.today { border-color: var(--gold); }
+.sched-event-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+.sched-event-time { font-size: 12px; color: var(--gold); margin-bottom: 6px; }
+.sched-event-detail { font-size: 12px; color: var(--muted); line-height: 1.7; }
+.sched-event-lodging { font-size: 12px; color: var(--blue); margin-top: 4px; }
+.sched-event-notes { font-size: 12px; color: var(--dim); font-style: italic; margin-top: 4px; }
+.edit-btn { background: none; border: 1px solid var(--border2); color: var(--muted); padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; font-family: 'Montserrat', sans-serif; white-space: nowrap; }
+.edit-btn:hover { border-color: var(--gold); color: var(--gold); }
+.edit-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+.edit-modal.show { display: flex; }
+.edit-box { background: var(--surface); border-radius: var(--radius); padding: 20px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+.edit-box h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+.edit-field { margin-bottom: 12px; }
+.edit-field label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+.edit-field input, .edit-field select, .edit-field textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border2); color: var(--text); padding: 8px 12px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 13px; }
+.edit-field textarea { min-height: 60px; resize: vertical; }
+.edit-field input:focus, .edit-field select:focus, .edit-field textarea:focus { outline: none; border-color: var(--gold); }
+.edit-btns { display: flex; gap: 8px; margin-top: 16px; }
+.save-btn { flex: 1; background: var(--gold); color: var(--bg); border: none; padding: 10px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
+.cancel-btn { background: var(--surface2); border: 1px solid var(--border2); color: var(--muted); padding: 10px 16px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 13px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0YQJy7Ea4w0sUIo4kvYaaei407FxBMPlUgPrwLtirI2aoL4fk/exec";
+</script>
+
+<div class="topbar">
+  <h1><span>P</span>BC Tour Dashboard</h1>
+  <div class="topbar-right">
+    <div class="live-badge" id="live-badge" style="background:var(--red-bg);border-color:rgba(224,85,85,0.3)"><div class="live-dot" id="live-dot" style="background:var(--red)"></div> <span id="live-text">Connecting...</span></div>
+    <button class="refresh-btn" onclick="loadData()">&#8635; Refresh</button>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <span class="filter-label">Viewing:</span>
+  <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+  <button class="filter-btn" onclick="setFilter('mens', this)">Men's</button>
+  <button class="filter-btn" onclick="setFilter('ladies', this)">Ladies'</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('finances', this)">Finances</div>
+  <div class="tab" onclick="switchTab('income', this)">Income</div>
+  <div class="tab" onclick="switchTab('evaluations', this)">Evaluations</div>
+  <div class="tab" onclick="switchTab('contacts', this)">Contacts</div>
+  <div class="tab" onclick="switchTab('log', this)">Log</div>
+  <div class="tab" onclick="switchTab('schedule', this)">📅 Schedule</div>
+</div>
+
+<div class="panel active" id="panel-finances">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;margin-top:4px">
+    <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">Filter by category:</span>
+    <select id="cat-filter" onchange="filterByCategory()" style="background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:7px 14px;border-radius:6px;font-family:Montserrat,sans-serif;font-size:13px;cursor:pointer">
+      <option value="">All Categories</option>
+      <option>Food &amp; Meals</option>
+      <option>Transportation / Fuel</option>
+      <option>Lodging</option>
+      <option>Activities</option>
+      <option>Other</option>
+    </select>
+  </div>
+  <div id="fin-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+</div>
+<div class="panel" id="panel-income">
+  <div id="inc-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+</div>
+<div class="panel" id="panel-evaluations">
+  <div id="eval-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+</div>
+<div class="panel" id="panel-contacts">
+  <div id="con-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+</div>
+<div class="panel" id="panel-schedule">
+  <div id="sched-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+</div>
+
+<div class="panel" id="panel-log">
+  <div id="log-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+</div>
+
+
+
+<script>
+var cachedData = null;
+var activeFilter = 'all';
+var chartCat = null;
+var chartDate = null;
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  if (cachedData) renderAll(cachedData);
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+function filterRows(rows) {
+  if (activeFilter === 'all') return rows;
+  return rows.filter(function(r) {
+    var g = (r['Tour Group'] || '').toLowerCase();
+    return activeFilter === 'mens' ? (g === 'mens' || g === '') : g === 'ladies';
+  });
+}
+
+function fmtDate(val) {
+  if (!val) return '-';
+  var d = new Date(val);
+  return isNaN(d) ? String(val).split('T')[0] : d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+
+function fmtTime(val) {
+  if (!val) return '-';
+  var d = new Date(val);
+  return isNaN(d) ? '-' : d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+}
+
+
+
+function filterByCategory() {
+  if (!cachedData) return;
+  var cat = document.getElementById('cat-filter').value;
+  var rows = filterRows(cachedData.expenses || []);
+  if (cat) rows = rows.filter(function(r) { return (r['Category'] || '') === cat; });
+  renderFinances(rows);
+}
+
+function setLive(isLive) {
+  var badge = document.getElementById('live-badge');
+  var dot = document.getElementById('live-dot');
+  var text = document.getElementById('live-text');
+  if (isLive) {
+    badge.style.background = 'var(--green-bg)';
+    badge.style.borderColor = 'rgba(46,204,138,0.3)';
+    badge.style.color = 'var(--green)';
+    dot.style.background = 'var(--green)';
+    text.textContent = 'Live';
+  } else {
+    badge.style.background = 'var(--red-bg)';
+    badge.style.borderColor = 'rgba(224,85,85,0.3)';
+    badge.style.color = 'var(--red)';
+    dot.style.background = 'var(--red)';
+    text.textContent = 'Offline';
+  }
+}
+
+function loadData() {
+  fetch(SCRIPT_URL)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      cachedData = data;
+      renderAll(data);
+      setLive(true);
+    })
+    .catch(function(err) {
+      document.getElementById('fin-body').innerHTML = '<div class="error-msg">Error: ' + err.message + '</div>';
+      setLive(false);
+    });
+}
+
+function renderAll(data) {
+  var catFilter = document.getElementById('cat-filter');
+  var activeCat = catFilter ? catFilter.value : '';
+  var expRows = filterRows(data.expenses || []);
+  if (activeCat) expRows = expRows.filter(function(r) { return (r['Category'] || '') === activeCat; });
+  renderFinances(expRows);
+  renderIncome(filterRows(data.income || []));
+  renderEvaluations(filterRows(data.evaluations || []));
+  renderContacts(filterRows(data.infocards || []));
+  renderLog(filterRows(data.log || []));
+  renderSchedule(data.schedule || [], data.lodging || []);
+}
+
+function renderFinances(rows) {
+  var total = rows.reduce(function(s, r) { return s + (parseFloat(r['Amount ($)']) || 0); }, 0);
+  var cats = {};
+  rows.forEach(function(r) { var c = r['Category'] || 'Other'; cats[c] = (cats[c] || 0) + (parseFloat(r['Amount ($)']) || 0); });
+  var catKeys = Object.keys(cats);
+  var colors = ['#f7b214','#2ECC8A','#7BAFF8','#E05555','#A78BFA','#F472B6'];
+
+  var html = '<div class="metrics">';
+  html += '<div class="metric"><div class="metric-label">Total Expenses</div><div class="metric-value red">$' + total.toFixed(2) + '</div><div class="metric-sub">' + rows.length + ' records</div></div>';
+  html += '<div class="metric"><div class="metric-label">Categories</div><div class="metric-value blue">' + catKeys.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Avg per Entry</div><div class="metric-value gold">' + (rows.length ? '$' + (total / rows.length).toFixed(2) : '-') + '</div></div>';
+  html += '</div>';
+
+  html += '<div class="chart-row">';
+  html += '<div class="chart-wrap"><div class="chart-title">By category</div><canvas id="chart-cat"></canvas></div>';
+  html += '<div class="chart-wrap"><div class="chart-title">By date</div><canvas id="chart-date"></canvas></div>';
+  html += '</div>';
+
+  html += '<div class="table-wrap"><div class="table-head"><h3>All Expenses</h3><button class="export-btn" onclick="exportCSV(\'expenses\')">Export CSV</button></div><div class="table-scroll"><table><thead><tr><th>Date</th><th>Amount</th><th>Category</th><th>Submitted By</th><th>Receipt</th></tr></thead><tbody>';
+  if (!rows.length) {
+    html += '<tr><td colspan="5" class="empty">No expenses yet</td></tr>';
+  } else {
+    rows.slice().reverse().forEach(function(r) {
+      var amt = parseFloat(r['Amount ($)']) || 0;
+      var link = r['Receipt Link'] && r['Receipt Link'].indexOf('http') === 0 ? '<a href="' + r['Receipt Link'] + '" target="_blank">View</a>' : '-';
+      html += '<tr><td style="font-family:\'DM Mono\',monospace;font-size:12px">' + fmtDate(r['Expense Date']) + '</td><td style="color:var(--red);font-family:\'DM Mono\',monospace">$' + amt.toFixed(2) + '</td><td><span class="badge badge-gold">' + (r['Category'] || '-') + '</span></td><td style="color:var(--muted)">' + (r['Submitted By'] || '-') + '</td><td>' + link + '</td></tr>';
+    });
+  }
+  html += '</tbody></table></div></div>';
+  document.getElementById('fin-body').innerHTML = html;
+
+  if (chartCat) chartCat.destroy();
+  if (catKeys.length) {
+    chartCat = new Chart(document.getElementById('chart-cat').getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: catKeys, datasets: [{ data: catKeys.map(function(c) { return cats[c].toFixed(2); }), backgroundColor: colors.slice(0, catKeys.length), borderWidth: 0 }] },
+      options: { plugins: { legend: { position: 'bottom', labels: { color: '#7A766D', font: { size: 11 }, boxWidth: 10, padding: 10 } } }, cutout: '65%' }
+    });
+  }
+
+  var byDate = {};
+  rows.forEach(function(r) { var d = String(r['Expense Date']).split('T')[0]; byDate[d] = (byDate[d] || 0) + (parseFloat(r['Amount ($)']) || 0); });
+  var dates = Object.keys(byDate).sort();
+  if (chartDate) chartDate.destroy();
+  if (dates.length) {
+    chartDate = new Chart(document.getElementById('chart-date').getContext('2d'), {
+      type: 'bar',
+      data: { labels: dates, datasets: [{ data: dates.map(function(d) { return byDate[d].toFixed(2); }), backgroundColor: 'rgba(247,178,20,0.75)', borderRadius: 4 }] },
+      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#4A4740', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#4A4740', font: { size: 10 }, callback: function(v) { return '$' + v; } }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+    });
+  }
+}
+
+function renderIncome(rows) {
+  var total = rows.reduce(function(s, r) { return s + (parseFloat(r['Amount ($)']) || 0); }, 0);
+  var byType = {};
+  rows.forEach(function(r) { var t = r['Income Type'] || 'Other'; byType[t] = (byType[t] || 0) + (parseFloat(r['Amount ($)']) || 0); });
+
+  var html = '<div class="metrics">';
+  html += '<div class="metric"><div class="metric-label">Total Income</div><div class="metric-value green">$' + total.toFixed(2) + '</div><div class="metric-sub">' + rows.length + ' entries</div></div>';
+  html += '<div class="metric"><div class="metric-label">Cash</div><div class="metric-value gold">$' + (byType['Cash'] || 0).toFixed(2) + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Check</div><div class="metric-value blue">$' + (byType['Check'] || 0).toFixed(2) + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Card</div><div class="metric-value blue">$' + (byType['Card'] || 0).toFixed(2) + '</div></div>';
+  html += '</div>';
+
+  html += '<div class="table-wrap"><div class="table-head"><h3>All Income</h3><button class="export-btn" onclick="exportCSV(\'income\')">Export CSV</button></div><div class="table-scroll"><table><thead><tr><th>Date</th><th>Church</th><th>Amount</th><th>Category</th><th>Type</th><th>Submitted By</th></tr></thead><tbody>';
+  if (!rows.length) {
+    html += '<tr><td colspan="6" class="empty">No income yet</td></tr>';
+  } else {
+    rows.slice().reverse().forEach(function(r) {
+      var amt = parseFloat(r['Amount ($)']) || 0;
+      html += '<tr><td style="font-family:\'DM Mono\',monospace;font-size:12px">' + fmtDate(r['Income Date']) + '</td><td style="color:var(--muted);font-size:12px">' + (r['Church Name / City / State'] || '-') + '</td><td style="color:var(--green);font-family:\'DM Mono\',monospace">$' + amt.toFixed(2) + '</td><td><span class="badge badge-green">' + (r['Income Category'] || '-') + '</span></td><td style="color:var(--muted)">' + (r['Income Type'] || '-') + '</td><td style="color:var(--muted)">' + (r['Submitted By'] || '-') + '</td></tr>';
+    });
+  }
+  html += '</tbody></table></div></div>';
+  document.getElementById('inc-body').innerHTML = html;
+}
+
+function renderEvaluations(rows) {
+  var ratings = rows.map(function(r) { return parseFloat(r['Soul-Winning Rating (1-5)']) || 0; }).filter(function(n) { return n > 0; });
+  var avg = ratings.length ? (ratings.reduce(function(a, b) { return a + b; }, 0) / ratings.length).toFixed(1) : '-';
+
+  var html = '<div class="metrics">';
+  html += '<div class="metric"><div class="metric-label">Churches</div><div class="metric-value blue">' + rows.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Avg Soul-Winning</div><div class="metric-value gold">' + avg + '</div><div class="metric-sub">out of 5</div></div>';
+  html += '<div class="metric"><div class="metric-label">PBC Connections</div><div class="metric-value green">' + rows.filter(function(r) { return r['PBC Connections'] === 'Yes'; }).length + '</div></div>';
+  html += '</div>';
+  html += '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="export-btn" onclick="exportCSV(\'evaluations\')">Export CSV</button></div>';
+
+  if (!rows.length) {
+    html += '<div class="empty">No evaluations yet</div>';
+  } else {
+    rows.slice().reverse().forEach(function(r) {
+      var sw = parseFloat(r['Soul-Winning Rating (1-5)']) || 0;
+      var rec = parseFloat(r['Recommend Returning (0-5)']) || 0;
+      var provided = (r['Provided by Church'] || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+      html += '<div class="eval-card">';
+      html += '<div class="eval-top"><div><div class="eval-church">' + (r['Church Name / City / State'] || 'Unknown') + '</div><div class="eval-meta">' + fmtDate(r['Visit Date']) + ' · Pastor ' + (r['Pastor Name'] || '-') + (r['Submitted By'] ? ' · <span style="color:var(--gold)">' + r['Submitted By'] + '</span>' : '') + '</div></div><div class="eval-score">' + (sw || '-') + '/5</div></div>';
+      html += '<div class="bar-row"><div class="bar-label">Soul-winning</div><div class="bar-bg"><div class="bar-fill" style="width:' + (sw / 5 * 100) + '%"></div></div><div class="bar-num">' + (sw || '-') + '</div></div>';
+      html += '<div class="bar-row"><div class="bar-label">Recommend</div><div class="bar-bg"><div class="bar-fill" style="width:' + (rec / 5 * 100) + '%;background:var(--blue)"></div></div><div class="bar-num">' + (rec || '-') + '</div></div>';
+      if (r['Teenagers in Attendance (est.)']) html += '<div style="font-size:12px;color:var(--muted);margin-top:8px">Teenagers: ' + r['Teenagers in Attendance (est.)'] + '</div>';
+      if (r['PBC Connections'] === 'Yes') html += '<div style="font-size:12px;color:var(--green);margin-top:4px">PBC connection: ' + (r['PBC Connection Details'] || '') + '</div>';
+      if (provided.length) html += '<div style="font-size:12px;color:var(--muted);margin-top:4px">Provided: ' + provided.join(', ') + '</div>';
+      if (r['Notes for Future Visits']) html += '<div style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic">' + r['Notes for Future Visits'] + '</div>';
+      html += '</div>';
+    });
+  }
+  document.getElementById('eval-body').innerHTML = html;
+}
+
+function renderContacts(rows) {
+  var visiting = rows.filter(function(r) { return (r['Interests'] || '').indexOf('visiting') > -1; }).length;
+  var applying = rows.filter(function(r) { return (r['Interests'] || '').indexOf('applying') > -1; }).length;
+
+  var html = '<div class="metrics">';
+  html += '<div class="metric"><div class="metric-label">Total Contacts</div><div class="metric-value blue">' + rows.length + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Want to Visit</div><div class="metric-value gold">' + visiting + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">Want to Apply</div><div class="metric-value green">' + applying + '</div></div>';
+  html += '</div>';
+  html += '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="export-btn" onclick="exportCSV(\'contacts\')">Export CSV</button></div>';
+
+  if (!rows.length) {
+    html += '<div class="empty">No interest cards yet</div>';
+  } else {
+    rows.slice().reverse().forEach(function(r) {
+      var hasPhoto = r['Interest Form Photo Link'] && r['Interest Form Photo Link'].indexOf('http') === 0;
+      html += '<div class="contact-card">';
+      html += '<div class="contact-name">' + (r['First Name'] || '') + ' ' + (r['Last Name'] || '') + ' <span style="font-size:12px;color:var(--muted);font-weight:400">' + (r['Gender'] || '') + '</span></div>';
+      html += '<div class="contact-meta">' + (r['Email'] || '') + ' · ' + (r['Phone'] || '') + '<br>' + [r['City'], r['State'], r['Zip']].filter(Boolean).join(', ') + '<br>' + (r['Church Name / City / State'] || '') + ' · Pastor ' + (r['Pastor Name'] || '-') + '<br>Grad ' + (r['HS Grad Year'] || '-') + '</div>';
+      if (r['Interests']) html += '<div class="contact-interests">' + r['Interests'] + '</div>';
+      if (r['Majors of Interest']) html += '<div style="font-size:11px;color:var(--muted);margin-top:4px">' + r['Majors of Interest'] + '</div>';
+      if (r['Submitted By']) html += '<div style="font-size:12px;color:var(--gold);margin-top:6px;font-weight:500">' + r['Submitted By'] + '</div>';
+      if (hasPhoto) html += '<div style="margin-top:8px"><a href="' + r['Interest Form Photo Link'] + '" target="_blank" style="color:var(--green);font-size:12px">View Maverick Club card</a></div>';
+      html += '</div>';
+    });
+  }
+  document.getElementById('con-body').innerHTML = html;
+}
+
+function renderLog(rows) {
+  var icons = { evaluation: 'Destination Church', expenses: 'Finance', infocard: 'Contact' };
+  var html = '';
+  if (!rows.length) {
+    html = '<div class="empty">No submissions yet</div>';
+  } else {
+    html = '<div class="table-wrap" style="padding:16px 20px">';
+    rows.slice().reverse().forEach(function(r) {
+      html += '<div class="log-item"><div class="log-time">' + fmtTime(r['Timestamp']) + '</div><div style="font-size:13px"><span style="color:var(--gold)">' + (icons[r['Type']] || r['Type']) + '</span> ' + (r['Summary'] || '') + '</div></div>';
+    });
+    html += '</div>';
+  }
+  document.getElementById('log-body').innerHTML = html;
+}
+
+function exportCSV(type) {
+  if (!cachedData) return;
+  var rows = [];
+  var filename = 'PBC_Tour';
+  if (type === 'expenses') { rows = filterRows(cachedData.expenses || []); filename = 'PBC_Tour_Expenses'; }
+  else if (type === 'income') { rows = filterRows(cachedData.income || []); filename = 'PBC_Tour_Income'; }
+  else if (type === 'evaluations') { rows = filterRows(cachedData.evaluations || []); filename = 'PBC_Tour_Evaluations'; }
+  else if (type === 'contacts') { rows = filterRows(cachedData.infocards || []); filename = 'PBC_Tour_Contacts'; }
+  if (!rows.length) { alert('No data to export.'); return; }
+
+  var headers = Object.keys(rows[0]);
+  var lines = [headers.join(',')];
+  rows.forEach(function(row) {
+    var vals = headers.map(function(h) {
+      var v = row[h] === null || row[h] === undefined ? '' : String(row[h]);
+      if (v.indexOf(',') > -1 || v.indexOf('"') > -1) { v = ['"', v.replace(/"/g, '""'), '"'].join(''); }
+      return v;
+    });
+    lines.push(vals.join(','));
+  });
+
+  var csv = lines.join('\r\n');
+  var suffix = activeFilter !== 'all' ? '_' + activeFilter : '';
+  var date = new Date().toISOString().split('T')[0];
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename + suffix + '_' + date + '.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Handle horizontal swipe on tables
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.table-scroll').forEach(function(el) {
+    var startX, startY, startScrollLeft;
+    el.addEventListener('touchstart', function(e) {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      startScrollLeft = el.scrollLeft;
+    }, { passive: true });
+    el.addEventListener('touchmove', function(e) {
+      if (!startX || !startY) return;
+      var dx = Math.abs(e.touches[0].clientX - startX);
+      var dy = Math.abs(e.touches[0].clientY - startY);
+      if (dx > dy) {
+        e.stopPropagation();
+        el.scrollLeft = startScrollLeft - (e.touches[0].clientX - startX);
+      }
+    }, { passive: true });
+  });
+});
+
+// ── SCHEDULE ──────────────────────────────────────────────────
+var editingRow = null;
+
+function escapeDateStr(s) { return s.replace(/'/g, '&#39;'); }
+
+function formatDateInputValue(raw) {
+  if (!raw) return '';
+  var d;
+  if (raw instanceof Date) d = raw;
+  else if (String(raw).indexOf('T') > -1 || /^\d{4}-\d{2}-\d{2}/.test(String(raw))) d = new Date(raw);
+  else d = new Date(String(raw) + ', 2026');
+  if (isNaN(d)) return '';
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+function formatDisplayDateFromInput(dateInput) {
+  if (!dateInput) return '';
+  var d = new Date(dateInput + 'T12:00:00');
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function dayOfWeekFromInput(dateInput) {
+  if (!dateInput) return '';
+  var d = new Date(dateInput + 'T12:00:00');
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('en-US', { weekday: 'long' });
+}
+
+function updateEditDayOfWeek() {
+  var dateVal = document.getElementById('edit-date').value;
+  document.getElementById('edit-day-of-week').value = dayOfWeekFromInput(dateVal);
+}
+
+function renderSchedule(rows, lodgingRows) {
+  if (lodgingRows === undefined) lodgingRows = (cachedData && cachedData.lodging) ? cachedData.lodging : [];
+  var group = activeFilter;
+  var filtered = group === 'all' ? rows : rows.filter(function(r) { return (r['Tour Group']||'').toLowerCase() === group; });
+
+  // Build lodging lookup by normalized date + group
+  var lodgingByKey = {};
+  lodgingRows.forEach(function(l) {
+    var raw = String(l['Date'] || '');
+    var d;
+    if (raw.indexOf('T') > -1 || /^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      d = new Date(raw).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    } else {
+      d = new Date(raw + ', 2026').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    }
+    var key = d + '|' + (l['Tour Group']||'').toLowerCase();
+    if (!lodgingByKey[key]) lodgingByKey[key] = [];
+    lodgingByKey[key].push(l);
+  });
+
+  // Build events lookup by normalized date
+  var eventsByDate = {};
+  filtered.forEach(function(r) {
+    var raw = String(r['Date'] || '');
+    var d;
+    if (raw.indexOf('T') > -1 || /^\d{4}-\d{2}-\d{2}/.test(raw)) {
+      d = new Date(raw).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    } else {
+      d = new Date(raw + ', 2026').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    }
+    if (!eventsByDate[d]) eventsByDate[d] = [];
+    eventsByDate[d].push(r);
+  });
+
+  var todayStr = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  // Generate all dates May 16 - Aug 2 2026
+  var start = new Date('2026-05-16T12:00:00');
+  var end = new Date('2026-08-02T12:00:00');
+  var html = '';
+  var cur = new Date(start);
+
+  while (cur <= end) {
+    var dateStr = cur.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    var dayName = DAYS[cur.getDay()];
+    var isToday = dateStr === todayStr;
+    var events = eventsByDate[dateStr] || [];
+    var groupsToShow = group === 'all' ? ['ladies','mens'] : [group];
+
+    html += '<div class="sched-day">';
+    html += '<div class="sched-date' + (isToday?' today':'') + '">';
+    html += MONTHS[cur.getMonth()] + ' ' + cur.getDate() + ' — ' + dayName;
+    if (isToday) html += ' ★ TODAY';
+    html += '</div>';
+
+    // Events
+    var addGroup = group === 'all' ? 'ladies' : group;
+    if (events.length === 0) {
+      html += '<div class="sched-event" style="border-style:dashed;opacity:0.4;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--dim)">No events</span><button class="edit-btn" onclick="openAddModal(\'' + escapeDateStr(dateStr) + '\',\'' + addGroup + '\')">+ Add</button></div>';
+    } else {
+      events.forEach(function(ev) {
+        var rowIdx = filtered.indexOf(ev);
+        var evGroup = (ev['Tour Group']||'').toLowerCase();
+        var borderColor = evGroup==='ladies' ? '#E879A0' : evGroup==='mens' ? '#7BAFF8' : 'rgba(255,255,255,0.08)';
+        var badgeBg = evGroup==='ladies' ? 'rgba(232,121,160,0.18)' : 'rgba(123,175,248,0.15)';
+        var badgeColor = evGroup==='ladies' ? '#E879A0' : '#7BAFF8';
+        var badgeLabel = evGroup==='ladies' ? "Ladies'" : evGroup==='mens' ? "Men's" : '';
+        var badge = badgeLabel ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:' + badgeBg + ';color:' + badgeColor + ';margin-left:8px">' + badgeLabel + '</span>' : '';
+        html += '<div class="sched-event' + (isToday?' today':'') + '" style="border-left:3px solid ' + borderColor + ';padding-left:12px">';
+        var evType = ev['Event'] || '';
+        html += '<div class="sched-event-title"><span>' + (evType||'—') + badge + '</span><div style="display:flex;gap:4px"><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button><button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteEvent(' + rowIdx + ')">✕</button></div></div>';
+        if (ev['Event Time']) html += '<div class="sched-event-time">⏰ ' + ev['Event Time'] + '</div>';
+        var loc = [ev['Destination'],ev['Destination City, State']].filter(Boolean).join(' · ');
+        if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
+        if (ev['Pastor']) html += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
+        if (ev['Leader Notes']) html += '<div class="sched-event-notes">' + ev['Leader Notes'] + '</div>';
+        html += '</div>';
+      });
+      // Add event button for additional events
+      html += '<div style="text-align:right;margin-top:4px"><button class="edit-btn" onclick="openAddModal(\'' + escapeDateStr(dateStr) + '\',\'' + addGroup + '\')">+ Add event</button></div>';
+    }
+
+    // Lodging - always shown at bottom, one row per group, editable not deletable
+    html += '<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">';
+    groupsToShow.forEach(function(g) {
+      var lKey = dateStr + '|' + g;
+      var lEntries = lodgingByKey[lKey] || [];
+      var lPink = g === 'ladies';
+      var lBorderColor = lPink ? 'rgba(232,121,160,0.3)' : 'rgba(123,175,248,0.2)';
+      var lBg = lPink ? 'rgba(232,121,160,0.07)' : 'rgba(123,175,248,0.07)';
+      var lBadgeColor = lPink ? '#E879A0' : '#7BAFF8';
+      var lBadgeBg = lPink ? 'rgba(232,121,160,0.18)' : 'rgba(123,175,248,0.15)';
+      var lBadge = group === 'all' ? '<span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;background:' + lBadgeBg + ';color:' + lBadgeColor + ';margin-right:6px">' + (g==='ladies'?"Ladies'":"Men's") + '</span>' : '';
+      var lText = lEntries.length && lEntries[0]['Lodging Location'] ? lEntries[0]['Lodging Location'] : '<span style="color:var(--dim);font-style:italic">Not set</span>';
+      var lContact = lEntries.length && lEntries[0]['Contact'] ? ' · ' + lEntries[0]['Contact'] : '';
+      var lNotes = lEntries.length && lEntries[0]['Notes'] ? ' <span style="color:var(--dim);font-size:11px;font-style:italic">— ' + lEntries[0]['Notes'] + '</span>' : '';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;background:' + lBg + ';border:1px solid ' + lBorderColor + ';border-radius:6px;padding:7px 10px">';
+      html += '<div style="font-size:12px;color:var(--text)">🛏️ ' + lBadge + lText + lContact + lNotes + '</div>';
+      var lEditLabel = lEntries.length && lEntries[0]['Lodging Location'] ? 'Edit' : '+ Add';
+      html += '<button class="edit-btn" onclick="editLodging(\'' + escapeDateStr(dateStr) + '\',\'' + g + '\')">' + lEditLabel + '</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    html += '</div>'; // close sched-day
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  document.getElementById('sched-body').innerHTML = html;
+}
+
+function openEditModal(rowIdx) {
+  if (!cachedData || !cachedData.schedule) return;
+  var group = activeFilter;
+  var filtered = group === 'all' ? cachedData.schedule : cachedData.schedule.filter(function(r) { return (r['Tour Group']||'').toLowerCase() === group; });
+  var ev = filtered[rowIdx];
+  if (!ev) return;
+  editingRow = ev;
+  var rawDate = String(ev['Date']||'');
+  var displayDate = rawDate;
+  if (rawDate.indexOf('T') > -1 || /^\d{4}-\d{2}-\d{2}/.test(rawDate)) {
+    var d = new Date(rawDate);
+    displayDate = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+  } else if (rawDate) {
+    var d = new Date(rawDate + ', 2026');
+    if (!isNaN(d)) displayDate = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+  }
+  document.getElementById('edit-modal-title').textContent = 'Edit — ' + displayDate;
+  document.getElementById('edit-date').value = formatDateInputValue(rawDate);
+  updateEditDayOfWeek();
+  document.getElementById('edit-event-type').value = ev['Event'] || ev['Event Type'] || '';
+  document.getElementById('edit-church').value = ev['Destination'] || '';
+  document.getElementById('edit-city').value = ev['Destination City, State'] || '';
+  document.getElementById('edit-pastor').value = ev['Pastor'] || '';
+  document.getElementById('edit-times').value = ev['Event Time'] || ev['Event time'] || '';
+
+  document.getElementById('edit-notes').value = ev['Leader Notes'] || '';
+  document.getElementById('edit-tour-group').value = ev['Tour Group'] || '';
+  document.getElementById('save-btn-label').textContent = 'Save Changes';
+  document.getElementById('edit-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function openAddModal(dateStr, group) {
+  editingRow = null;
+  var initialDate = formatDateInputValue(dateStr);
+  document.getElementById('edit-modal-title').textContent = 'Add Event — ' + (dateStr || 'New Date');
+  document.getElementById('edit-date').value = initialDate;
+  updateEditDayOfWeek();
+  document.getElementById('edit-event-type').value = 'Travel';
+  document.getElementById('edit-church').value = '';
+  document.getElementById('edit-city').value = '';
+  document.getElementById('edit-pastor').value = '';
+  document.getElementById('edit-times').value = '';
+  document.getElementById('edit-notes').value = '';
+  document.getElementById('edit-tour-group').value = group || 'ladies';
+  document.getElementById('save-btn-label').textContent = 'Add Event';
+  document.getElementById('edit-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('show');
+  document.body.style.overflow = '';
+  editingRow = null;
+}
+
+function deleteEvent(rowIdx) {
+  if (!cachedData || !cachedData.schedule) return;
+  var group = activeFilter;
+  var filtered = group === 'all' ? cachedData.schedule : cachedData.schedule.filter(function(r) { return (r['Tour Group']||'').toLowerCase() === group; });
+  var ev = filtered[rowIdx];
+  if (!ev) return;
+  var evType = ev['Event'] || '—';
+  var date = ev['Date'] || '';
+  if (!confirm('Delete "' + evType + '" on ' + date + '?')) return;
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify({
+      action: 'deleteScheduleEvent',
+      original: {
+        tourGroup: ev['Tour Group'] || '',
+        date: ev['Date'] || '',
+        eventType: ev['Event'] || '',
+        destination: ev['Destination'] || '',
+        cityState: ev['Destination City, State'] || '',
+        pastor: ev['Pastor'] || '',
+        eventTime: ev['Event Time'] || '',
+        notes: ev['Leader Notes'] || ''
+      }
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) { loadData(); }
+    else { alert('Delete failed: ' + (data.error || 'unknown error')); }
+  })
+  .catch(function(err) { alert('Delete failed: ' + err.message); });
+}
+
+function saveEdit() {
+  var dateInput = document.getElementById('edit-date').value;
+  var displayDate = formatDisplayDateFromInput(dateInput);
+  var dayOfWeek = dayOfWeekFromInput(dateInput);
+  var tourGroup = document.getElementById('edit-tour-group').value;
+  var payload = {
+    tourGroup: tourGroup,
+    date: displayDate,
+    dayOfWeek: dayOfWeek,
+    eventType: document.getElementById('edit-event-type').value,
+    churchName: document.getElementById('edit-church').value,
+    cityState: document.getElementById('edit-city').value,
+    pastor: document.getElementById('edit-pastor').value,
+    serviceTimes: document.getElementById('edit-times').value,
+    notes: document.getElementById('edit-notes').value
+  };
+
+  if (!payload.tourGroup || !payload.date) {
+    alert('Tour Group and Date are required.');
+    return;
+  }
+
+  if (editingRow) {
+    payload.action = 'updateSchedule';
+    payload.original = {
+      tourGroup: editingRow['Tour Group'] || '',
+      date: editingRow['Date'] || '',
+      eventType: editingRow['Event'] || editingRow['Event Type'] || '',
+      destination: editingRow['Destination'] || '',
+      cityState: editingRow['Destination City, State'] || '',
+      pastor: editingRow['Pastor'] || '',
+      eventTime: editingRow['Event Time'] || editingRow['Event time'] || '',
+      notes: editingRow['Leader Notes'] || ''
+    };
+  } else {
+    payload.action = 'addScheduleEvent';
+  }
+
+  console.log('saveEdit payload:', JSON.stringify(payload));
+  fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(payload) })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      console.log('saveEdit response:', JSON.stringify(data));
+      if (data.success) {
+        loadData();
+        closeEditModal();
+      } else { alert('Save failed: ' + (data.error || 'unknown error')); }
+    })
+    .catch(function(err) { alert('Save failed: ' + err.message); });
+}
+
+function editLodging(dateStr, group) {
+  var lKey = dateStr + '|' + group;
+  var lEntries = [];
+  if (cachedData && cachedData.lodging) {
+    lEntries = cachedData.lodging.filter(function(l) {
+      var raw = String(l['Date']||'');
+      var d = raw.indexOf('T')>-1||raw.match(/^\d{4}-\d{2}-\d{2}/) ? new Date(raw).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : new Date(raw+', 2026').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+      return d === dateStr && (l['Tour Group']||'').toLowerCase() === group;
+    });
+  }
+  var l = lEntries[0] || {};
+  document.getElementById('lodging-modal-title').textContent = (group==='ladies'?"Ladies'":"Men's") + ' Lodging — ' + dateStr;
+  document.getElementById('lodging-date').value = dateStr;
+  document.getElementById('lodging-group').value = group;
+  document.getElementById('lodging-location').value = l['Lodging Location'] || '';
+  document.getElementById('lodging-address').value = l['Address'] || '';
+  document.getElementById('lodging-contact').value = l['Contact'] || '';
+  document.getElementById('lodging-notes').value = l['Notes'] || '';
+  document.getElementById('lodging-modal').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLodgingModal() {
+  document.getElementById('lodging-modal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function saveLodging() {
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify({
+      action: 'updateLodging',
+      tourGroup: document.getElementById('lodging-group').value,
+      date: document.getElementById('lodging-date').value,
+      lodgingLocation: document.getElementById('lodging-location').value,
+      address: document.getElementById('lodging-address').value,
+      contact: document.getElementById('lodging-contact').value,
+      notes: document.getElementById('lodging-notes').value
+    })
+  }).then(function(r){return r.json();}).then(function(d){ if(d.success){loadData();closeLodgingModal();}else{alert('Save failed');}}).catch(function(e){alert('Save failed: '+e.message);});
+}
+
+// deleteLodging removed — lodging is permanent per day
+
+setInterval(loadData, 60000);
+loadData();
+</script>
+<!-- Edit Schedule Modal -->
+<div class="edit-modal" id="edit-modal">
+  <div class="edit-box">
+    <h3 id="edit-modal-title">Edit Event</h3>
+    <div class="edit-field"><label>Tour Group</label>
+      <select id="edit-tour-group">
+        <option value="ladies">Ladies</option>
+        <option value="mens">Men's</option>
+      </select>
+    </div>
+    <div class="edit-field"><label>Date</label><input type="date" id="edit-date" onchange="updateEditDayOfWeek()"></div>
+    <div class="edit-field"><label>Day of Week (auto)</label><input type="text" id="edit-day-of-week" readonly></div>
+    <div class="edit-field"><label>Event Type</label>
+      <select id="edit-event-type">
+        <option>Travel</option>
+        <option>AM Service</option>
+        <option>PM Service</option>
+        <option>AM & PM Service</option>
+        <option>Midweek Service</option>
+        <option>Special</option>
+        <option>Teen Activity</option>
+        <option>College Activity</option>
+        <option>Camp / Conference</option>
+        <option>PBC Day</option>
+        <option>Rest Day</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="edit-field"><label>Destination</label><input type="text" id="edit-church"></div>
+    <div class="edit-field"><label>City / State</label><input type="text" id="edit-city"></div>
+    <div class="edit-field"><label>Pastor</label><input type="text" id="edit-pastor"></div>
+    <div class="edit-field"><label>Event Time</label><input type="text" id="edit-times" placeholder="e.g. 10:00 AM / 6:00 PM"></div>
+    <div class="edit-field"><label>Leader Notes</label><textarea id="edit-notes"></textarea></div>
+    <div class="edit-btns">
+      <button class="cancel-btn" onclick="closeEditModal()">Cancel</button>
+      <button class="save-btn" onclick="saveEdit()" id="save-btn-label">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lodging Edit Modal -->
+<div class="edit-modal" id="lodging-modal">
+  <div class="edit-box">
+    <h3 id="lodging-modal-title">Edit Lodging</h3>
+    <input type="hidden" id="lodging-date">
+    <input type="hidden" id="lodging-group">
+    <div class="edit-field"><label>Lodging Location</label><input type="text" id="lodging-location" placeholder="e.g. Heritage Baptist Church, Motel 6"></div>
+    <div class="edit-field"><label>Address</label><input type="text" id="lodging-address" placeholder="Street address"></div>
+    <div class="edit-field"><label>Contact</label><input type="text" id="lodging-contact" placeholder="Pastor name or phone"></div>
+    <div class="edit-field"><label>Notes</label><textarea id="lodging-notes" placeholder="Any additional lodging notes..."></textarea></div>
+    <div class="edit-btns">
+      <button class="cancel-btn" onclick="closeLodgingModal()">Cancel</button>
+      <button class="save-btn" onclick="saveLodging()">Save Lodging</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

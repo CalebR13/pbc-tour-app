@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>PBC Tour App</title>
+
+<!-- iOS PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PBC Tour">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#3b3b3b">
+
+<!-- iOS Home Screen Icon (inline SVG → base64 PNG via canvas, generated on load) -->
+<link rel="apple-touch-icon" id="apple-touch-icon">
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;PBC Tour App&quot;,&quot;short_name&quot;:&quot;PBC Tour&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%233b3b3b&quot;,&quot;theme_color&quot;:&quot;%233b3b3b&quot;,&quot;start_url&quot;:&quot;/&quot;}">
+
+<script>
+// Generate iOS touch icon from canvas on page load
+window.addEventListener('load', function() {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 180; canvas.height = 180;
+    const ctx = canvas.getContext('2d');
+
+    // Background - dark charcoal with rounded corners
+    ctx.fillStyle = '#3b3b3b';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, 180, 180, 36);
+    ctx.fill();
+
+    // Gold accent bar at bottom
+    ctx.fillStyle = '#f7b214';
+    ctx.beginPath();
+    ctx.roundRect(0, 148, 180, 32, [0, 0, 36, 36]);
+    ctx.fill();
+
+    // "PBC" text in white
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 52px Montserrat, Arial Black, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('PBC', 90, 86);
+
+    // "TOUR" small text in gold above bar
+    ctx.fillStyle = '#f7b214';
+    ctx.font = '500 18px Montserrat, Arial, sans-serif';
+    ctx.letterSpacing = '3px';
+    ctx.fillText('TOUR', 90, 130);
+
+    // Set as apple touch icon
+    const link = document.getElementById('apple-touch-icon');
+    if (link) link.href = canvas.toDataURL('image/png');
+  } catch(e) { console.log('Icon generation skipped:', e); }
+});
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f0ee; --surface: #ffffff; --border: #d0cdc7; --text: #3b3b3b; --muted: #7a7672;
+    --gold: #f7b214; --gold-light: #fef6e0; --gold-dark: #c8900e;
+    --dark: #3b3b3b; --dark-light: #555555;
+    --accent-teal: #2a6040; --accent-teal-light: #e8f2ec;
+    --accent-amber: #c07010; --accent-amber-light: #fef3e0;
+    --accent-coral: #A0342A; --accent-coral-light: #FCF0EE;
+    --radius: 10px; --radius-sm: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 0 0 60px; padding-bottom: max(60px, env(safe-area-inset-bottom)); }
+  .header { background: var(--text); color: var(--bg); padding: 28px 24px 24px; text-align: center; }
+  .header h1 { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 400; }
+  .header p { font-size: 13px; color: #A09A90; margin-top: 4px; font-weight: 300; }
+  .container { max-width: 600px; margin: 0 auto; padding: 24px 16px 0; }
+  .progress-bar { display: flex; gap: 8px; margin-bottom: 24px; }
+  .progress-step { flex: 1; height: 3px; background: var(--border); border-radius: 2px; transition: background 0.4s; }
+  .progress-step.active { background: var(--gold); }
+  .progress-step.done { background: var(--gold); opacity: 0.4; }
+  .screen { display: none; animation: fadeIn 0.3s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  /* Role cards */
+  .role-grid { display: grid; gap: 12px; margin-top: 8px; }
+  .role-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px 20px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 16px; -webkit-tap-highlight-color: transparent; }
+  .role-card:hover { border-color: var(--gold); }
+  .role-card.selected { border-color: var(--gold); background: var(--dark); color: #fff; border-width: 2px; }
+  .role-card.selected .role-desc { color: rgba(255,255,255,0.5); }
+  .role-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .role-card:not(.selected) .role-icon.teal { background: var(--dark); }
+  .role-card:not(.selected) .role-icon.amber { background: var(--gold-light); }
+  .role-card:not(.selected) .role-icon.coral { background: #f0e8e8; }
+  .role-card.selected .role-icon { background: rgba(255,255,255,0.12); }
+  .role-name { font-size: 16px; font-weight: 500; }
+  .role-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* Badges & labels */
+  .workflow-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 20px; margin-bottom: 20px; }
+  .badge-teal { background: var(--dark); color: #fff; }
+  .badge-amber { background: var(--gold-light); color: var(--gold-dark); }
+  .badge-coral { background: #f0e8e8; color: #8a2a22; }
+  .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .screen-title { font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+  .screen-subtitle { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+
+  /* Fields */
+  .field-group { margin-bottom: 18px; }
+  .field-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 7px; color: var(--text); }
+  .field-label .req { color: var(--accent-coral); margin-left: 2px; }
+  input[type="text"], input[type="email"], input[type="tel"], input[type="number"], select, textarea {
+    width: 100%; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 11px 14px; font-family: 'Montserrat', sans-serif; font-size: 15px; color: var(--text);
+    transition: border-color 0.2s; appearance: none; -webkit-appearance: none;
+  }
+  input[type="date"] {
+    width: 100%; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 14px 16px; font-family: 'Montserrat', sans-serif; font-size: 16px; color: var(--text);
+    transition: border-color 0.2s; appearance: none; -webkit-appearance: none;
+    min-height: 52px; cursor: pointer; letter-spacing: 0.02em;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    width: 28px; height: 28px; cursor: pointer; opacity: 0.6; filter: invert(0.4);
+  }
+  input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(247,178,20,0.15); }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237A766D' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
+  }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .amount-wrap { position: relative; }
+  .amount-wrap span { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  .amount-wrap input { padding-left: 28px; }
+
+  /* Option lists (radio + checkbox) */
+  .options-list { display: flex; flex-direction: column; gap: 8px; }
+  .opt { display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; -webkit-tap-highlight-color: transparent; user-select: none; }
+  .opt:hover { border-color: var(--gold); }
+  .opt.sel { border-color: var(--dark); background: var(--dark); color: #fff; }
+  .opt-dot { width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .opt.sel .opt-dot { background: var(--bg); border-color: var(--bg); }
+  .dot-inner { width: 8px; height: 8px; background: var(--text); border-radius: 50%; display: none; }
+  .opt.sel .dot-inner { display: block; }
+  .opt-box { width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .opt.sel .opt-box { background: var(--bg); border-color: var(--bg); }
+  .opt-box svg { display: none; }
+  .opt.sel .opt-box svg { display: block; }
+  .opt-lbl { font-size: 14px; }
+
+  /* Conditional */
+  .cond { display: none; margin-top: 10px; }
+  .cond.show { display: block; }
+
+  /* Stars */
+  .stars { display: flex; gap: 6px; }
+  .star { width: 40px; height: 40px; border-radius: 8px; background: var(--surface); border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; transition: all 0.15s; color: var(--border); -webkit-tap-highlight-color: transparent; }
+  .star.on { background: var(--gold-light); border-color: var(--gold); color: var(--gold); }
+
+  /* Slider */
+  .slider-wrap { padding: 8px 0; }
+  .slider-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 6px; }
+  input[type="range"] { width: 100%; accent-color: var(--gold); }
+
+  /* File upload */
+  .file-drop { border: 1.5px dashed var(--border); border-radius: var(--radius-sm); padding: 24px 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; background: var(--surface); }
+  .file-drop:hover { border-color: var(--gold); }
+  .file-drop input { display: none; }
+  .file-drop .icon { font-size: 26px; margin-bottom: 8px; }
+  .file-drop p { font-size: 13px; color: var(--muted); }
+  .file-drop p strong { color: var(--text); font-weight: 500; }
+  .fname { font-size: 13px; color: var(--accent-teal); margin-top: 6px; }
+
+  /* Finance type chooser */
+  .type-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .type-btn { padding: 20px; border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--surface); cursor: pointer; text-align: center; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+  .type-btn:hover { border-color: var(--gold); }
+  .type-btn.sel { background: var(--dark); border-color: var(--dark); color: #fff; }
+  .type-btn .ticon { font-size: 28px; margin-bottom: 6px; }
+  .type-btn .tname { font-size: 15px; font-weight: 500; }
+
+  /* Income entries */
+  .income-entry { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; position: relative; }
+  .entry-num { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 12px; }
+  .remove-btn { position: absolute; top: 14px; right: 14px; background: none; border: none; font-size: 18px; color: var(--muted); cursor: pointer; line-height: 1; }
+  .remove-btn:hover { color: var(--accent-coral); }
+  .add-btn { width: 100%; padding: 12px; background: transparent; border: 1.5px dashed var(--border); border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 14px; color: var(--muted); cursor: pointer; transition: all 0.2s; margin-bottom: 18px; }
+  .add-btn:hover { border-color: var(--gold); color: var(--dark); }
+
+  /* Notice */
+  .notice { background: var(--gold-light); border: 1.5px solid var(--gold); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--gold-dark); margin-bottom: 18px; font-weight: 500; }
+
+  /* Misc */
+  .divider { height: 1px; background: var(--border); margin: 22px 0; }
+  .btn-row { display: flex; gap: 10px; margin-top: 28px; }
+  .btn { flex: 1; padding: 14px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+  .btn-primary { background: var(--dark); color: #fff; border: none; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+  .btn-secondary { background: transparent; color: var(--muted); border: 1.5px solid var(--border); flex: 0 0 auto; padding: 14px 20px; }
+  .btn-secondary:hover { border-color: var(--text); color: var(--text); }
+  .success-screen { text-align: center; padding: 40px 20px; }
+  .success-icon { width: 64px; height: 64px; background: var(--dark); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 28px; }
+  .success-screen h2 { font-family: 'Montserrat', sans-serif; font-size: 26px; font-weight: 400; margin-bottom: 10px; }
+  .success-screen p { font-size: 15px; color: var(--muted); line-height: 1.6; margin-bottom: 28px; }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(30,28,25,0.75); z-index: 100; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
+  .overlay.show { display: flex; }
+  .spinner { width: 36px; height: 36px; border: 3px solid rgba(245,242,236,0.3); border-top-color: #F5F2EC; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  .overlay p { color: #F5F2EC; font-size: 15px; font-family: 'Montserrat', sans-serif; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .err-banner { background: #FCF0EE; border: 1.5px solid #E0A090; border-radius: var(--radius-sm); padding: 12px 16px; font-size: 13px; color: var(--accent-coral); margin-bottom: 16px; display: none; }
+  @media (max-width: 400px) { .row-2,.row-3 { grid-template-columns: 1fr; } .star { width: 34px; height: 34px; font-size: 17px; } }
+  .schedule-day { margin-bottom: 20px; }
+  .schedule-date { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .schedule-date.today { color: var(--gold); border-bottom-color: var(--gold); }
+  .schedule-event { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 8px; }
+  .schedule-event.today { border-color: var(--gold); background: rgba(247,178,20,0.05); }
+  .event-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .event-time { font-size: 12px; color: var(--gold); font-weight: 500; margin-bottom: 6px; }
+  .event-detail { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .today-banner { background: var(--gold); color: var(--dark); padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; margin-bottom: 20px; text-align: center; letter-spacing: 0.04em; }
+  .schedule-empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 14px; }
+  .schedule-loading { text-align: center; padding: 40px; color: var(--muted); }
+  .tour-toggle-wrap { margin-bottom: 20px; }
+  .tour-toggle-label { font-size: 11px; font-weight: 200; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .tour-toggle { display: grid; grid-template-columns: 1fr 1fr; background: var(--border); border-radius: 8px; padding: 3px; gap: 3px; }
+  .tour-btn { padding: 10px; text-align: center; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; font-family: 'Montserrat', sans-serif; border: none; background: transparent; color: var(--muted); transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+  .tour-btn.active { background: var(--dark); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+  .tour-btn.active.ladies { background: var(--gold); color: var(--dark); }
+  /* Income addon */
+  .income-addon { margin-top: 8px; }
+  .income-addon-toggle { display: grid; grid-template-columns: 1fr 1fr; background: var(--border); border-radius: 8px; padding: 3px; gap: 3px; margin-bottom: 0; }
+  .income-addon-btn { padding: 10px; text-align: center; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; font-family: 'Montserrat', sans-serif; border: none; background: transparent; color: var(--muted); transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+  .income-addon-btn.active { background: var(--dark); color: #fff; }
+  .income-addon-btn.yes.active { background: var(--gold); color: var(--dark); }
+  .income-section { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .income-section.show { display: block; }
+  .home-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 500; font-family: 'Montserrat', sans-serif; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: all 0.2s; flex-shrink: 0; }
+  .home-btn:hover { background: rgba(255,255,255,0.2); }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px 12px; }
+  .header-inner h1 { flex: 1; text-align: left; font-size: 16px; }
+  .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .tour-pill { display: flex; align-items: center; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; overflow: hidden; }
+  .tour-pill-btn { padding: 5px 10px; font-size: 11px; font-weight: 600; font-family: 'Montserrat', sans-serif; cursor: pointer; border: none; background: transparent; color: rgba(255,255,255,0.45); transition: all 0.2s; -webkit-tap-highlight-color: transparent; white-space: nowrap; }
+  .tour-pill-btn.active { background: var(--gold); color: var(--dark); }
+  .top-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--muted); background: none; border: none; cursor: pointer; padding: 0 0 18px 0; font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .top-back:hover { color: var(--dark); }
+  .top-back svg { width: 16px; height: 16px; }
+</style>
+</head>
+<body>
+
+<script>const SCRIPT_URL="https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0YQJy7Ea4w0sUIo4kvYaaei407FxBMPlUgPrwLtirI2aoL4fk/exec";</script>
+
+<div class="overlay" id="overlay"><div class="spinner"></div><p>Submitting…</p></div>
+
+<div class="header">
+  <div class="header-inner">
+    <h1>Providence Tour Team App</h1>
+    <div class="header-right">
+      <div class="tour-pill">
+        <button class="tour-pill-btn active" id="pill-mens" onclick="switchTourPill('mens')">Men's</button>
+        <button class="tour-pill-btn" id="pill-ladies" onclick="switchTourPill('ladies')">Ladies'</button>
+      </div>
+      <button class="home-btn" onclick="resetToHome()">⌂</button>
+    </div>
+  </div>
+  <div class="header-bar"></div>
+</div>
+
+<div class="container">
+  <div class="progress-bar">
+    <div class="progress-step active" id="s1"></div>
+    <div class="progress-step" id="s2"></div>
+    <div class="progress-step" id="s3"></div>
+  </div>
+
+  <!-- ── ROLE ── -->
+  <div class="screen active" id="sc-role">
+    <h2 class="screen-title">What are you submitting?</h2>
+    <p class="screen-subtitle">Choose your role to get started.</p>
+    <div class="tour-toggle-wrap">
+      <div class="tour-toggle-label">Tour Group</div>
+      <div class="tour-toggle">
+        <button class="tour-btn active" id="btn-mens" onclick="setTourGroup('mens')">🏃 Men's Tour</button>
+        <button class="tour-btn ladies" id="btn-ladies" onclick="setTourGroup('ladies')">👩 Ladies' Tour</button>
+      </div>
+    </div>
+    <div class="role-grid">
+      <div class="role-card" data-role="evaluation" onclick="pickRole(this)">
+        <div class="role-icon teal">🏛️</div>
+        <div><div class="role-name">Church Visit</div><div class="role-desc">Submit a completed church visit</div></div>
+      </div>
+      <div class="role-card" data-role="finances" onclick="pickRole(this)">
+        <div class="role-icon amber">💰</div>
+        <div><div class="role-name">Treasurer</div><div class="role-desc">Submit trip expenses</div></div>
+      </div>
+      <div class="role-card" data-role="infocard" onclick="pickRole(this)">
+        <div class="role-icon coral">📋</div>
+        <div><div class="role-name">Maverick Club</div><div class="role-desc">Submit a student interest card</div></div>
+      </div>
+      <div class="role-card" data-role="socials" onclick="pickRole(this)">
+        <div class="role-icon" style="background:#1a1a2e">📸</div>
+        <div><div class="role-name">Social Photos</div><div class="role-desc">Upload photos for social media</div></div>
+      </div>
+      <div class="role-card" data-role="schedule" onclick="pickRole(this)">
+        <div class="role-icon" style="background:#0d2b1e">📅</div>
+        <div><div class="role-name">Tour Schedule</div><div class="role-desc">View the daily tour schedule</div></div>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="startWorkflow()" id="btn-role" disabled>Continue →</button></div>
+  </div>
+
+  <!-- ── CHURCH EVALUATION ── -->
+  <div class="screen" id="sc-evaluation">
+    <button class="top-back" onclick="back()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Back</button>
+    <div class="workflow-badge badge-teal">🏛️ Church Evaluation</div>
+    <h2 class="screen-title">Church Visit Details</h2>
+    <p class="screen-subtitle">Fill in what you observed during this visit.</p>
+
+    <div class="field-group"><label class="field-label">Date of Visit <span class="req">*</span></label><input type="date" id="e-date"></div>
+    <div class="field-group"><label class="field-label">Church Name, City, State <span class="req">*</span></label><input type="text" placeholder="e.g. Grace Baptist Church, Springfield, IL" id="e-church"></div>
+    <div class="field-group"><label class="field-label">Pastor Name <span class="req">*</span></label><input type="text" placeholder="Full name" id="e-pastor"></div>
+
+    <div class="field-group">
+      <label class="field-label">Teenagers in Attendance (est.) <span class="req">*</span></label>
+      <div class="options-list">
+        <div class="opt" onclick="radio('e-teens','A: 0–5',this)"><div class="opt-dot"><div class="dot-inner"></div></div><span class="opt-lbl">A — 0–5</span></div>
+        <div class="opt" onclick="radio('e-teens','B: 6–10',this)"><div class="opt-dot"><div class="dot-inner"></div></div><span class="opt-lbl">B — 6–10</span></div>
+        <div class="opt" onclick="radio('e-teens','C: 11–20',this)"><div class="opt-dot"><div class="dot-inner"></div></div><span class="opt-lbl">C — 11–20</span></div>
+        <div class="opt" onclick="radio('e-teens','D: 20+',this)"><div class="opt-dot"><div class="dot-inner"></div></div><span class="opt-lbl">D — 20+</span></div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Current connections to PBC? <span class="req">*</span></label>
+      <div class="options-list">
+        <div class="opt" onclick="radio('e-pbc','No',this);hide('e-pbc-cond')"><div class="opt-dot"><div class="dot-inner"></div></div><span class="opt-lbl">No</span></div>
+        <div class="opt" onclick="radio('e-pbc','Yes',this);show('e-pbc-cond')"><div class="opt-dot"><div class="dot-inner"></div></div><span class="opt-lbl">Yes — provide details</span></div>
+      </div>
+      <div class="cond" id="e-pbc-cond"><input type="text" placeholder="Alumni, current students, pastor/staff relationships…" id="e-pbc-det"></div>
+    </div>
+
+    <div class="field-group"><label class="field-label">Other Bible college connections</label><textarea placeholder="Pastor recommends, graduates, or current students at other colleges…" id="e-colleges"></textarea></div>
+
+    <div class="field-group">
+      <label class="field-label">Provided by the church/pastor? <span class="req">*</span></label>
+      <div class="options-list" id="e-provided">
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Meals</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Lodging</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Love Offering / Special Gift</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Other</span></div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Is it a soul-winning church? <span class="req">*</span></label>
+      <div class="stars" id="sw-stars">
+        <div class="star" onclick="star(1)">★</div><div class="star" onclick="star(2)">★</div>
+        <div class="star" onclick="star(3)">★</div><div class="star" onclick="star(4)">★</div>
+        <div class="star" onclick="star(5)">★</div>
+      </div>
+    </div>
+
+    <div class="field-group"><label class="field-label">Differences from our standards? <span style="color:var(--muted)">(optional)</span></label><textarea placeholder="Doctrinal or lifestyle differences…" id="e-diffs"></textarea></div>
+    <div class="field-group"><label class="field-label">Other notes for future visits? <span style="color:var(--muted)">(optional)</span></label><textarea placeholder="Anything the team should know next time…" id="e-notes"></textarea></div>
+
+    <div class="field-group">
+      <label class="field-label">Would you recommend returning? <span class="req">*</span></label>
+      <div class="slider-wrap">
+        <input type="range" min="0" max="5" step="1" value="3" id="e-rec" oninput="document.getElementById('e-rec-val').textContent=this.value">
+        <div class="slider-labels"><span>0 — Not at all</span><span id="e-rec-val">3</span><span>5 — For sure</span></div>
+      </div>
+    </div>
+
+
+    <div class="divider"></div>
+    <div class="field-group">
+      <label class="field-label">Was any income received at this church?</label>
+      <div class="income-addon">
+        <div class="income-addon-toggle">
+          <button class="income-addon-btn active" id="inc-no-btn" onclick="toggleIncomeAddon('no')">No</button>
+          <button class="income-addon-btn yes" id="inc-yes-btn" onclick="toggleIncomeAddon('yes')">Yes — add income</button>
+        </div>
+        <div class="income-section" id="eval-income-section">
+          <div class="field-group"><label class="field-label">Church receiving income from</label><input type="text" id="ei-church" placeholder="Auto-filled from above" style="opacity:0.7"></div>
+          <div class="field-group"><label class="field-label">Income Date</label><input type="date" id="ei-date"></div>
+          <div class="section-label" style="margin-top:4px">Income Entries</div>
+          <div id="ei-entries"></div>
+          <button class="add-btn" onclick="addEvalIncomeEntry()">+ Add another income entry</button>
+          <div class="notice">⚠️ Please deposit all cash and checks within 48 hours of receipt.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row"><button class="btn btn-secondary" onclick="back()">← Back</button><button class="btn btn-primary" onclick="review()">Review →</button></div>
+  </div>
+
+  <!-- ── FINANCE TYPE ── -->
+  <div class="screen" id="sc-finances">
+    <button class="top-back" onclick="go('sc-finances','sc-role')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Back</button>
+    <div class="workflow-badge badge-amber">💰 Finances</div>
+    <h2 class="screen-title">What are you submitting?</h2>
+    <p class="screen-subtitle">Choose the type of financial record.</p>
+    <div class="type-choice">
+      <div class="type-btn" onclick="pickFinType('expense',this)"><div class="ticon">📤</div><div class="tname">Expense</div></div>
+      <div class="type-btn" onclick="pickFinType('income',this)"><div class="ticon">📥</div><div class="tname">Income</div></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="back()">← Back</button><button class="btn btn-primary" onclick="goFinForm()" id="btn-fin" disabled>Continue →</button></div>
+  </div>
+
+  <!-- ── EXPENSE ── -->
+  <div class="screen" id="sc-expense">
+    <button class="top-back" onclick="go('sc-expense','sc-finances')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Back</button>
+    <div class="workflow-badge badge-amber">📤 Expense</div>
+    <h2 class="screen-title">Expense Details</h2>
+    <p class="screen-subtitle">Log an expense from the trip.</p>
+    <div class="row-2">
+      <div class="field-group"><label class="field-label">Expense Date <span class="req">*</span></label><input type="date" id="x-date"></div>
+      <div class="field-group"><label class="field-label">Amount <span class="req">*</span></label><div class="amount-wrap"><span>$</span><input type="number" placeholder="0.00" step="0.01" min="0" id="x-amt"></div></div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Expense Category <span class="req">*</span></label>
+      <select id="x-cat" onchange="document.getElementById('x-cat-other').style.display=this.value==='Other'?'block':'none'">
+        <option value="">Select a category…</option>
+        <option>Food & Meals</option>
+        <option>Transportation / Fuel</option>
+        <option>Lodging</option>
+        <option>Activities</option>
+        <option>Other</option>
+      </select>
+      <div id="x-cat-other" style="display:none;margin-top:8px"><input type="text" id="x-cat-other-detail" placeholder="Please describe…"></div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Upload receipt <span class="req">*</span></label>
+      <div class="file-drop" onclick="document.getElementById('x-file').click()">
+        <input type="file" id="x-file" accept="image/*,.pdf" onchange="fname(this,'x-fname')">
+        <div class="icon">📎</div><p><strong>Click to choose a file</strong> or drag here</p><p>Photo or PDF of receipt</p>
+        <div class="fname" id="x-fname"></div>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="go('sc-expense','sc-finances')">← Back</button><button class="btn btn-primary" onclick="review()">Review →</button></div>
+  </div>
+
+  <!-- ── INCOME ── -->
+  <div class="screen" id="sc-income">
+    <button class="top-back" onclick="go('sc-income','sc-finances')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Back</button>
+    <div class="workflow-badge badge-amber">📥 Income</div>
+    <h2 class="screen-title">Income Record</h2>
+    <p class="screen-subtitle">Log one or more income entries for this church.</p>
+    <div class="field-group"><label class="field-label">Church Name, City, State <span class="req">*</span></label><input type="text" placeholder="e.g. Grace Baptist Church, Springfield, IL" id="i-church"></div>
+    <div class="field-group"><label class="field-label">Income Date <span class="req">*</span></label><input type="date" id="i-date"></div>
+    <div class="divider"></div>
+    <div class="section-label">Income Entries</div>
+    <div id="i-entries"></div>
+    <button class="add-btn" onclick="addEntry()">+ Add another income entry</button>
+    <div class="notice">⚠️ Please deposit all cash and checks within 48 hours of receipt.</div>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="go('sc-income','sc-finances')">← Back</button><button class="btn btn-primary" onclick="review()">Review →</button></div>
+  </div>
+
+  <!-- ── INFO CARD ── -->
+  <div class="screen" id="sc-infocard">
+    <button class="top-back" onclick="back()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Back</button>
+    <div class="workflow-badge badge-coral">📋 Interest Card</div>
+    <h2 class="screen-title">Student Interest Card</h2>
+    <p class="screen-subtitle">Record a student's contact and interest details.</p>
+
+    <div class="row-2">
+      <div class="field-group"><label class="field-label">First Name <span class="req">*</span></label><input type="text" placeholder="First" id="c-first"></div>
+      <div class="field-group"><label class="field-label">Last Name <span class="req">*</span></label><input type="text" placeholder="Last" id="c-last"></div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Gender <span class="req">*</span></label>
+      <div class="options-list">
+        <div class="opt" onclick="radio('c-gender','Male',this)"><div class="opt-dot"><div class="dot-inner"></div></div><span class="opt-lbl">Male</span></div>
+        <div class="opt" onclick="radio('c-gender','Female',this)"><div class="opt-dot"><div class="dot-inner"></div></div><span class="opt-lbl">Female</span></div>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="field-group"><label class="field-label">Date of Birth <span class="req">*</span></label><input type="date" id="c-dob"></div>
+      <div class="field-group"><label class="field-label">HS Grad Year <span class="req">*</span></label><input type="number" placeholder="2026" min="2024" max="2035" id="c-grad"></div>
+    </div>
+
+    <div class="field-group"><label class="field-label">Email <span class="req">*</span></label><input type="email" placeholder="student@email.com" id="c-email"></div>
+    <div class="field-group"><label class="field-label">Phone <span class="req">*</span></label><input type="tel" placeholder="(555) 000-0000" id="c-phone"></div>
+
+    <div class="row-3">
+      <div class="field-group"><label class="field-label">City <span class="req">*</span></label><input type="text" placeholder="City" id="c-city"></div>
+      <div class="field-group"><label class="field-label">State <span class="req">*</span></label><input type="text" placeholder="IL" maxlength="2" id="c-state"></div>
+      <div class="field-group"><label class="field-label">Zip <span class="req">*</span></label><input type="text" placeholder="60601" maxlength="5" id="c-zip"></div>
+    </div>
+
+    <div class="field-group"><label class="field-label">Church Name, City, State <span class="req">*</span></label><input type="text" placeholder="e.g. Grace Baptist, Springfield, IL" id="c-church"></div>
+    <div class="field-group"><label class="field-label">Pastor Name <span class="req">*</span></label><input type="text" placeholder="Pastor's full name" id="c-pastor"></div>
+
+    <div class="divider"></div><div class="section-label">Interests</div>
+
+    <div class="field-group">
+      <label class="field-label">Interests <span class="req">*</span></label>
+      <div class="options-list" id="c-interests">
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Interested in visiting the campus</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Interested in applying to Providence</span></div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Majors of Interest <span class="req">*</span></label>
+      <div class="options-list" id="c-majors">
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Pastor Theology</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Pastoral Assistant</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Missions</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Evangelism</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Music</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Graphic Design</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Secretarial</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Elementary Education</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">Secondary Education</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">General Studies</span></div>
+        <div class="opt" onclick="chk(this)"><div class="opt-box"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="var(--text)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="opt-lbl">One-Year Bible Certificate</span></div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Upload photo of Maverick Club card <span class="req">*</span></label>
+      <div class="file-drop" onclick="document.getElementById('c-file').click()">
+        <input type="file" id="c-file" accept="image/*,.pdf" multiple onchange="fname(this,'c-fname')">
+        <div class="icon">📸</div><p><strong>Click to choose a file</strong> or drag here</p><p>Photo of each Maverick Club card</p>
+        <div class="fname" id="c-fname"></div>
+      </div>
+    </div>
+
+    <div class="btn-row"><button class="btn btn-secondary" onclick="back()">← Back</button><button class="btn btn-primary" onclick="review()">Review →</button></div>
+  </div>
+
+  <!-- ── SOCIALS ── -->
+  <div class="screen" id="sc-socials">
+    <button class="top-back" onclick="back()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Back</button>
+    <div class="workflow-badge" style="background:#1a1a2e;color:#f7b214">📸 Social Photos</div>
+    <h2 class="screen-title">Upload Tour Photos</h2>
+    <p class="screen-subtitle">Photos upload directly to Google Drive at full quality — no compression.</p>
+
+    <div class="field-group">
+      <label class="field-label">Church / Location</label>
+      <input type="text" placeholder="e.g. Grace Baptist, Springfield, IL" id="soc-location">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Caption / Notes</label>
+      <textarea placeholder="Describe what's happening in the photos…" id="soc-caption" style="min-height:70px"></textarea>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Upload photos</label>
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:10px">📁</div>
+        <p style="font-size:14px;font-weight:500;margin-bottom:6px">Tap to open Tour Socials folder</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Photos upload at full quality directly to Google Drive</p>
+        <button onclick="openSocialsFolder()" style="background:var(--gold);color:var(--dark);border:none;padding:12px 28px;border-radius:var(--radius-sm);font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%">Open Drive Folder →</button>
+      </div>
+    </div>
+
+    <div class="notice" style="margin-top:4px">📌 After uploading to Drive, come back here and tap Done to log your submission.</div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="back()">← Back</button>
+      <button class="btn btn-primary" onclick="logSocialsSubmission()">Done ✓</button>
+    </div>
+  </div>
+
+  <!-- ── SCHEDULE ── -->
+  <div class="screen" id="sc-schedule">
+    <button class="top-back" onclick="back()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Back</button>
+    <div class="workflow-badge" style="background:#0d2b1e;color:#2ECC8A">📅 Tour Schedule</div>
+    <h2 class="screen-title">Tour Schedule</h2>
+    <p class="screen-subtitle" id="sched-subtitle">Loading schedule...</p>
+    <div id="schedule-content"><div class="schedule-loading">Loading...</div></div>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn btn-secondary" onclick="back()">← Back</button>
+    </div>
+  </div>
+
+  <!-- ── REVIEW ── -->
+  <div class="screen" id="sc-review">
+    <button class="top-back" onclick="editBack()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg> Edit</button>
+    <h2 class="screen-title">Review & Submit</h2>
+    <p class="screen-subtitle">Check your submission before sending.</p>
+    <div class="err-banner" id="err"></div>
+    <div id="rev-body" style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px 20px;font-size:14px;line-height:1.9;"></div>
+    <div class="field-group" style="margin-top:20px">
+      <label class="field-label">Submitted by <span class="req">*</span></label>
+      <select id="submitted-by">
+        <option value="">Select your name…</option>
+      </select>
+    </div>
+
+    <div class="btn-row"><button class="btn btn-secondary" onclick="editBack()">← Edit</button><button class="btn btn-primary" id="btn-sub" onclick="submit()">Submit ✓</button></div>
+  </div>
+
+  <!-- ── SUCCESS ── -->
+  <div class="screen" id="sc-success">
+    <div class="success-screen">
+      <div class="success-icon">✓</div>
+      <h2>Submitted!</h2>
+      <p id="ok-msg">Your form has been recorded.</p>
+      <button class="btn btn-primary" onclick="reset()" style="max-width:220px;margin:0 auto">Submit another</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let role=null, finType=null, formScreen=null, swRating=0, entryCount=0;
+let tourGroup = localStorage.getItem('pbcTourGroup') || 'mens';
+
+const MENS_NAMES = ['Putnam','Walker','Tan','McDonnell','Davadilla','Wilbar','Rardin'];
+const LADIES_NAMES = ['Bartels','Bessine','Bottrell','Chase','Miller','Palmer','Rardin'];
+
+function switchTourPill(group) {
+  setTourGroup(group);
+  // If on role screen, update the toggle there too
+  var btns = document.querySelectorAll('.tour-btn');
+  btns.forEach(function(b) { b.classList.remove('active'); });
+  var activeBtn = document.getElementById('btn-' + group);
+  if (activeBtn) activeBtn.classList.add('active');
+}
+
+function setTourGroup(group) {
+  tourGroup = group;
+  localStorage.setItem('pbcTourGroup', group);
+  // Update role screen toggle
+  var btnMens = document.getElementById('btn-mens');
+  var btnLadies = document.getElementById('btn-ladies');
+  if (btnMens) btnMens.classList.toggle('active', group === 'mens');
+  if (btnLadies) { btnLadies.classList.toggle('active', group === 'ladies'); btnLadies.classList.add('ladies'); }
+  // Update header pills
+  var pillMens = document.getElementById('pill-mens');
+  var pillLadies = document.getElementById('pill-ladies');
+  if (pillMens) pillMens.classList.toggle('active', group === 'mens');
+  if (pillLadies) pillLadies.classList.toggle('active', group === 'ladies');
+  updateNameDropdown();
+}
+
+function updateNameDropdown() {
+  const sel = document.getElementById('submitted-by');
+  if (!sel) return;
+  const names = tourGroup === 'ladies' ? LADIES_NAMES : MENS_NAMES;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Select your name…</option>' + names.map(n => `<option value="${n}"${n===current?' selected':''}>${n}</option>`).join('');
+}
+
+// Apply saved tour group on load
+document.addEventListener('DOMContentLoaded', () => setTourGroup(tourGroup));
+const rv={};
+
+let evalIncomeCount = 0;
+let evalIncomeAddon = 'no';
+
+function toggleIncomeAddon(val) {
+  evalIncomeAddon = val;
+  document.getElementById('inc-no-btn').classList.toggle('active', val === 'no');
+  document.getElementById('inc-yes-btn').classList.toggle('active', val === 'yes');
+  const section = document.getElementById('eval-income-section');
+  section.classList.toggle('show', val === 'yes');
+  if (val === 'yes') {
+    // Auto-fill church name from eval form
+    document.getElementById('ei-church').value = v('e-church');
+    if (evalIncomeCount === 0) addEvalIncomeEntry();
+  }
+}
+
+function addEvalIncomeEntry() {
+  evalIncomeCount++;
+  const n = evalIncomeCount;
+  const d = document.createElement('div');
+  d.className = 'income-entry'; d.id = 'eie-' + n;
+  d.innerHTML = `<div class="entry-num">Entry ${n}</div>`
+    + (n > 1 ? `<button class="remove-btn" onclick="document.getElementById('eie-${n}').remove()">✕</button>` : '')
+    + `<div class="field-group"><label class="field-label">Income Type <span class="req">*</span></label><select id="eit-${n}"><option value="">Select…</option><option>Cash</option><option>Check</option><option>Card</option><option>Venmo / Digital</option><option>Other</option></select></div>`
+    + `<div class="field-group"><label class="field-label">Income Category <span class="req">*</span></label><select id="eic-${n}" onchange="this.nextElementSibling.style.display=this.value==='Other'?'block':'none'"><option value="">Select…</option><option>Love Offering</option><option>Other</option></select><div style="display:none;margin-top:8px"><input type="text" id="eioc-${n}" placeholder="Please describe…"></div></div>`
+    + `<div class="field-group"><label class="field-label">Amount <span class="req">*</span></label><div class="amount-wrap"><span>$</span><input type="number" placeholder="0.00" step="0.01" min="0" id="eia-${n}"></div></div>`;
+  document.getElementById('ei-entries').appendChild(d);
+}
+
+const SOCIALS_FOLDER_URL = "https://drive.google.com/drive/folders/1QLUh0LEwvmzciJmcpXGp2kFSWW7qmSxS?usp=share_link";
+
+function openSocialsFolder() {
+  window.open(SOCIALS_FOLDER_URL, '_blank');
+}
+
+function logSocialsSubmission() {
+  // Log to sheet via Apps Script
+  var payload = {
+    role: 'socials',
+    tourGroup: tourGroup,
+    location: v('soc-location'),
+    caption: v('soc-caption'),
+    submittedBy: ''
+  };
+  // Show review screen for name selection then submit
+  document.getElementById('sc-socials').classList.remove('active');
+  buildSocialsReview();
+  updateNameDropdown();
+  prog(3);
+  document.getElementById('sc-review').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function buildSocialsReview() {
+  var h = '';
+  var row = function(l,v) { return v ? '<div style="display:flex;gap:12px;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted);min-width:130px;font-size:13px;flex-shrink:0">'+l+'</span><span style="font-weight:500">'+v+'</span></div>' : ''; };
+  h += row('Tour group', tourGroup);
+  h += row('Location', v('soc-location'));
+  h += row('Caption', v('soc-caption'));
+  h += row('Photos', 'Uploaded to Google Drive');
+  document.getElementById('rev-body').innerHTML = h;
+  document.getElementById('err').style.display='none';
+}
+
+function pickRole(el){
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected'); role=el.dataset.role;
+  document.getElementById('btn-role').disabled=false;
+}
+function startWorkflow(){
+  if(!role)return; prog(2);
+  formScreen = role==='finances'?'sc-finances': role==='evaluation'?'sc-evaluation': role==='socials'?'sc-socials': role==='schedule'?'sc-schedule':'sc-infocard';
+  go('sc-role', formScreen);
+  if (role === 'schedule') loadSchedule();
+}
+function pickFinType(t,el){
+  finType=t;
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('btn-fin').disabled=false;
+}
+function goFinForm(){
+  if(!finType)return;
+  if(finType==='income'){ formScreen='sc-income'; if(entryCount===0)addEntry(); }
+  else formScreen='sc-expense';
+  go('sc-finances',formScreen);
+}
+function addEntry(){
+  entryCount++;
+  const n=entryCount;
+  const d=document.createElement('div');
+  d.className='income-entry'; d.id='ie-'+n;
+  d.innerHTML=`<div class="entry-num">Entry ${n}</div>`
+    +(n>1?`<button class="remove-btn" onclick="document.getElementById('ie-${n}').remove()">✕</button>`:'')
+    +`<div class="field-group"><label class="field-label">Income Type <span class="req">*</span></label><select id="it-${n}"><option value="">Select…</option><option>Cash</option><option>Check</option><option>Card</option><option>Venmo / Digital</option><option>Other</option></select></div>`
+    +`<div class="field-group"><label class="field-label">Income Category <span class="req">*</span></label><select id="ic-${n}" onchange="this.nextElementSibling.style.display=this.value==='Other'?'block':'none'"><option value="">Select…</option><option>Sales</option><option>Other</option></select><div style="display:none;margin-top:8px"><input type="text" id="ioc-${n}" placeholder="Please describe…"></div></div>`
+    +`<div class="field-group"><label class="field-label">Amount <span class="req">*</span></label><div class="amount-wrap"><span>$</span><input type="number" placeholder="0.00" step="0.01" min="0" id="ia-${n}"></div></div>`;
+  document.getElementById('i-entries').appendChild(d);
+}
+function radio(key,val,el){
+  el.closest('.options-list').querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel'); rv[key]=val;
+}
+function chk(el){ el.classList.toggle('sel'); }
+function star(n){
+  swRating=n;
+  document.querySelectorAll('#sw-stars .star').forEach((s,i)=>s.classList.toggle('on',i<n));
+}
+function show(id){const e=document.getElementById(id);if(e)e.classList.add('show');}
+function hide(id){const e=document.getElementById(id);if(e)e.classList.remove('show');}
+function fname(inp,tid){
+  const el=document.getElementById(tid);
+  if(!el)return;
+  el.textContent=inp.files.length>1?`📎 ${inp.files.length} files`:inp.files.length===1?`📎 ${inp.files[0].name}`:'';
+}
+function v(id){const e=document.getElementById(id);return e?e.value.trim():'';}
+function checked(containerId){
+  const c=document.getElementById(containerId);
+  if(!c)return[];
+  return[...c.querySelectorAll('.opt.sel .opt-lbl')].map(e=>e.textContent.trim());
+}
+function back(){ prog(1); go(document.querySelector('.screen.active').id,'sc-role'); }
+function editBack(){ prog(2); go('sc-review',formScreen); }
+function go(from,to){
+  const f=document.getElementById(from),t=document.getElementById(to);
+  if(f)f.classList.remove('active'); if(t)t.classList.add('active');
+  window.scrollTo(0,0);
+}
+function prog(n){
+  for(let i=1;i<=3;i++){
+    const e=document.getElementById('s'+i);
+    e.className='progress-step';
+    if(i<n)e.classList.add('done'); else if(i===n)e.classList.add('active');
+  }
+}
+function row(l,v){
+  return v?`<div style="display:flex;gap:12px;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted);min-width:130px;font-size:13px;flex-shrink:0">${l}</span><span style="font-weight:500">${v}</span></div>`:'';
+}
+function review(){
+  let h='';
+  const ss=n=>'★'.repeat(n)+'☆'.repeat(5-n);
+  if(role==='evaluation'){
+    h+=row('Date',v('e-date'))+row('Destination Church',v('e-church'))+row('Pastor',v('e-pastor'))
+      +row('Teenagers',rv['e-teens']||'—')
+      +row('PBC connections',rv['e-pbc']==='Yes'?'Yes — '+v('e-pbc-det'):rv['e-pbc']||'—')
+      +row('Other colleges',v('e-colleges'))
+      +row('Provided',checked('e-provided').join(', ')||'None')
+      +row('Soul-winning',swRating?ss(swRating):'—')
+      +row('Differences',v('e-diffs'))+row('Notes',v('e-notes'))
+      +row('Recommend',v('e-rec')||document.getElementById('e-rec').value);
+    if(evalIncomeAddon==='yes'){
+      h+='<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;font-weight:600;color:var(--gold);margin-bottom:6px">INCOME RECEIVED</div>';
+      h+=row('Destination Church',v('ei-church'))+row('Date',v('ei-date'));
+      document.querySelectorAll('[id^="eie-"]').forEach((e,i)=>{const n=e.id.replace('eie-','');const amt=v('eia-'+n),cat=v('eic-'+n),typ=v('eit-'+n);h+=row('Entry '+(i+1),[amt?'$'+parseFloat(amt).toFixed(2):'',cat,typ].filter(Boolean).join(' · '));});
+    }
+  } else if(finType==='expense'){
+    const f=document.getElementById('x-file');
+    h+=row('Date',v('x-date'))+row('Amount',v('x-amt')?'$'+parseFloat(v('x-amt')).toFixed(2):'—')
+      +row('Category',v('x-cat'))+row('Receipt',f&&f.files.length?f.files[0].name:'None');
+  } else if(finType==='income'){
+    h+=row('Destination Church',v('i-church'))+row('Date',v('i-date'));
+    document.querySelectorAll('.income-entry').forEach((e,i)=>{
+      const n=e.id.replace('ie-','');
+      const amt=v('ia-'+n),cat=v('ic-'+n),typ=v('it-'+n);
+      h+=row(`Entry ${i+1}`,[amt?'$'+parseFloat(amt).toFixed(2):'',cat,typ].filter(Boolean).join(' · '));
+    });
+  } else if(role==='infocard'){
+    const f=document.getElementById('c-file');
+    h+=row('Name',v('c-first')+' '+v('c-last'))+row('Gender',rv['c-gender']||'—')
+      +row('Date of birth',v('c-dob'))+row('HS grad year',v('c-grad'))
+      +row('Email',v('c-email'))+row('Phone',v('c-phone'))
+      +row('City/State/Zip',[v('c-city'),v('c-state'),v('c-zip')].filter(Boolean).join(', '))
+      +row('Destination Church',v('c-church'))+row('Pastor',v('c-pastor'))
+      +row('Interests',checked('c-interests').join(', ')||'—')
+      +row('Majors',checked('c-majors').join(', ')||'—')
+      +row('Form photo',f&&f.files.length?f.files.length+' file(s)':'None');
+  }
+  document.getElementById('rev-body').innerHTML=h||'<p style="color:var(--muted)">Nothing entered.</p>';
+  document.getElementById('err').style.display='none';
+  updateNameDropdown();
+  prog(3); go(formScreen,'sc-review');
+}
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    // PDFs — send as-is
+    if (file.type === 'application/pdf') {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ name: file.name, mimeType: file.type, data: reader.result.split(',')[1] });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+      return;
+    }
+    // Images — compress with canvas before sending
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 1200;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      resolve({ name: file.name.replace(/\.[^.]+$/, '.jpg'), mimeType: 'image/jpeg', data: dataUrl.split(',')[1] });
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+function buildPayload(){
+  if(role==='evaluation'){
+    const evalPayload = {role:'evaluation',tourGroup,date:v('e-date'),church:v('e-church'),pastor:v('e-pastor'),teenagers:rv['e-teens'],pbcConnections:rv['e-pbc'],pbcDetails:v('e-pbc-det'),otherColleges:v('e-colleges'),provided:checked('e-provided').join(', '),soulWinning:swRating,differences:v('e-diffs'),notes:v('e-notes'),recommend:document.getElementById('e-rec').value};
+    if(evalIncomeAddon==='yes'){
+      const incEntries=[];
+      document.querySelectorAll('[id^="eie-"]').forEach(e=>{const n=e.id.replace('eie-','');incEntries.push({amount:v('eia-'+n),category:v('eic-'+n),type:v('eit-'+n)});});
+      evalPayload.incomeAddon={church:v('ei-church'),date:v('ei-date'),entries:incEntries};
+    }
+    return evalPayload;
+  }
+  if(finType==='expense'){const cat=v('x-cat');const catDetail=cat==='Other'?v('x-cat-other-detail'):'';return{role:'expenses',type:'Expense',tourGroup,date:v('x-date'),amount:v('x-amt'),category:cat,categoryDetail:catDetail};}
+  if(finType==='income'){const entries=[];document.querySelectorAll('.income-entry').forEach(e=>{const n=e.id.replace('ie-','');entries.push({amount:v('ia-'+n),category:v('ic-'+n),type:v('it-'+n)});});return{role:'expenses',type:'Income',tourGroup,church:v('i-church'),date:v('i-date'),entries};}
+  if(role==='socials') return{role:'socials',tourGroup,location:v('soc-location'),caption:v('soc-caption')};
+  if(role==='infocard') return{role:'infocard',tourGroup,firstName:v('c-first'),lastName:v('c-last'),gender:rv['c-gender'],dob:v('c-dob'),gradYear:v('c-grad'),email:v('c-email'),phone:v('c-phone'),city:v('c-city'),state:v('c-state'),zip:v('c-zip'),church:v('c-church'),pastor:v('c-pastor'),interests:checked('c-interests').join(', '),majors:checked('c-majors').join(', ')};
+}
+async function submit(){
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('btn-sub').disabled=true;
+  try{
+    // Step 1: submit form data
+    const submittedBy = v('submitted-by');
+    if(!submittedBy){ const b=document.getElementById('err'); b.textContent='Please select your name before submitting.'; b.style.display='block'; document.getElementById('overlay').classList.remove('show'); document.getElementById('btn-sub').disabled=false; return; }
+    if(finType==='expense'){ const rf=document.getElementById('x-file'); if(!rf||rf.files.length===0){ const b=document.getElementById('err'); b.textContent='A photo of the receipt is required. Please go back and attach one.'; b.style.display='block'; document.getElementById('overlay').classList.remove('show'); document.getElementById('btn-sub').disabled=false; return; } }
+    const payload=buildPayload();
+    payload.submittedBy = submittedBy;
+    const r=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+    const j=await r.json();
+    if(!j.success) throw new Error(j.error);
+
+    // Step 2: upload file separately if present
+    const fileInput = finType==='expense' ? document.getElementById('x-file') : role==='infocard' ? document.getElementById('c-file') : null;
+    if(fileInput && fileInput.files.length > 0){
+      document.querySelector('#overlay p').textContent='Uploading photo...';
+      const fileData = await fileToBase64(fileInput.files[0]);
+      const filePayload = {
+        role: payload.role,
+        type: payload.type || '',
+        action: 'uploadFile',
+        label: payload.church || (payload.firstName ? payload.firstName+' '+payload.lastName : ''),
+        date: payload.date || '',
+        file: fileData
+      };
+      await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(filePayload)});
+    }
+
+    document.getElementById('ok-msg').textContent={evaluation:'Church evaluation saved.',expenses:'Financial record submitted.',infocard:'Student interest card saved.'}[role]||'Submitted!';
+    prog(3); go('sc-review','sc-success');
+  }catch(e){
+    const b=document.getElementById('err');
+    b.textContent='Submission failed. Check your connection and try again.';
+    b.style.display='block'; console.error(e);
+  }finally{
+    document.getElementById('overlay').classList.remove('show');
+    document.querySelector('#overlay p').textContent='Submitting...';
+    document.getElementById('btn-sub').disabled=false;
+  }
+}
+function loadSchedule() {
+  var container = document.getElementById('schedule-content');
+  var subtitle = document.getElementById('sched-subtitle');
+  container.innerHTML = '<div class="schedule-loading">Loading schedule...</div>';
+
+  fetch('https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0YQJy7Ea4w0sUIo4kvYaaei407FxBMPlUgPrwLtirI2aoL4fk/exec')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      console.log('schedule rows:', (data.schedule || []).length, 'tourGroup:', tourGroup);
+      if (data.schedule && data.schedule.length > 0) console.log('first row:', JSON.stringify(data.schedule[0]));
+      var rows = (data.schedule || []).filter(function(r) {
+        var g = (r['Tour Group'] || '').toLowerCase();
+        return g === tourGroup || g === 'both' || g === '';
+      });
+
+      if (!rows.length) {
+        container.innerHTML = '<div class="schedule-empty">No schedule posted yet.<br>Check back soon!</div>';
+        subtitle.textContent = tourGroup === 'ladies' ? "Ladies' Tour" : "Men's Tour";
+        return;
+      }
+
+      // Group by date
+      var byDate = {};
+      rows.forEach(function(r) {
+        var d = String(r['Date']).split('T')[0];
+        if (!byDate[d]) byDate[d] = [];
+        byDate[d].push(r);
+      });
+
+      var today = new Date().toISOString().split('T')[0];
+      var dates = Object.keys(byDate).sort();
+      var todayEvents = byDate[today] || [];
+
+      subtitle.textContent = (tourGroup === 'ladies' ? "Ladies'" : "Men's") + " Tour — " + dates.length + " day" + (dates.length !== 1 ? 's' : '');
+
+      var html = '';
+      if (todayEvents.length) {
+        html += '<div class="today-banner">TODAY — ' + formatDate(today) + '</div>';
+      }
+
+      dates.forEach(function(date) {
+        var isToday = date === today;
+        html += '<div class="schedule-day">';
+        html += '<div class="schedule-date' + (isToday ? ' today' : '') + '">' + formatDate(date) + (isToday ? ' — TODAY' : '') + '</div>';
+        byDate[date].forEach(function(ev) {
+          html += '<div class="schedule-event' + (isToday ? ' today' : '') + '">';
+          html += '<div class="event-title">' + (ev['Event'] || 'Event') + '</div>';
+          if (ev['Event time']) html += '<div class="event-time">⏰ ' + ev['Event time'] + '</div>';
+          var loc = [ev['Destination Church'], ev['Destination City, State']].filter(Boolean).join(' · ');
+          if (loc) html += '<div class="event-detail">' + loc + '</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+      });
+
+      container.innerHTML = html;
+    })
+    .catch(function(err) {
+      container.innerHTML = '<div class="schedule-empty">Could not load schedule.<br>Check your connection.</div>';
+    });
+}
+
+function formatDate(dateStr) {
+  var d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+function fmtTime(val) {
+  if (!val) return '';
+  var s = String(val);
+  // Google Sheets returns times as 1899-12-31T... ISO strings
+  if (s.indexOf('1899-12-31T') === 0 || s.indexOf('1899-12-30T') === 0) {
+    var d = new Date(s);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+  // Already a plain string like "7:00 PM CDT"
+  return s;
+}
+
+function resetToHome(){
+  reset();
+  window.scrollTo(0,0);
+}
+function reset(){
+  role=null;finType=null;formScreen=null;swRating=0;entryCount=0;evalIncomeCount=0;evalIncomeAddon='no';
+  Object.keys(rv).forEach(k=>delete rv[k]);
+  document.querySelectorAll('.role-card,.type-btn,.opt').forEach(e=>e.classList.remove('selected','sel'));
+  document.getElementById('btn-role').disabled=true;
+  document.getElementById('btn-fin').disabled=true;
+  document.querySelectorAll('.star').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('input[type="text"],input[type="email"],input[type="tel"],input[type="date"],input[type="number"],textarea').forEach(e=>e.value='');
+  document.querySelectorAll('select').forEach(e=>e.value='');
+  document.querySelectorAll('.cond').forEach(e=>e.classList.remove('show'));
+  document.getElementById('i-entries').innerHTML='';
+  document.getElementById('ei-entries').innerHTML='';
+  document.getElementById('eval-income-section').classList.remove('show');
+  document.getElementById('inc-no-btn').classList.add('active');
+  document.getElementById('inc-yes-btn').classList.remove('active');
+  document.getElementById('x-fname').textContent='';
+  document.getElementById('c-fname').textContent='';
+  document.getElementById('e-rec').value=3;
+  document.getElementById('e-rec-val').textContent='3';
+  prog(1); go(document.querySelector('.screen.active').id,'sc-role');
+}
+</script>
+</body>
+</html>
