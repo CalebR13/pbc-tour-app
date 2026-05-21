@@ -659,10 +659,10 @@ function updateLodging(ss, d) {
   var contactCol = headers.indexOf("Contact");
   var notesCol = headers.indexOf("Notes");
   var normalizedIncomingGroup = normalizeTourGroup(d.tourGroup);
-  var normalizedIncomingDate = normalizeDate(String(d.date || ""));
+  var normalizedIncomingDate = lodgingDateKey(d.date);
   for (var i = 1; i < data.length; i++) {
     if (lodgingRowMatches(data[i], headers, d.original) ||
-      (normalizeTourGroup(String(data[i][groupCol])) === normalizedIncomingGroup && normalizeDate(String(data[i][dateCol])) === normalizedIncomingDate)) {
+      (normalizeTourGroup(String(data[i][groupCol])) === normalizedIncomingGroup && lodgingDateKey(data[i][dateCol]) === normalizedIncomingDate)) {
       sheet.getRange(i+1, locationCol+1).setValue(d.lodgingLocation||"");
       sheet.getRange(i+1, addressCol+1).setValue(d.address||"");
       sheet.getRange(i+1, contactCol+1).setValue(d.contact||"");
@@ -682,7 +682,7 @@ function lodgingRowMatches(row, headers, original) {
   var contactCol = headers.indexOf("Contact");
   var notesCol = headers.indexOf("Notes");
   return normalizeTourGroup(String(row[groupCol] || "")) === normalizeTourGroup(String(original.tourGroup || "")) &&
-    normalizeDate(String(row[dateCol] || "")) === normalizeDate(String(original.date || "")) &&
+    lodgingDateKey(row[dateCol]) === lodgingDateKey(original.date) &&
     String(row[locationCol] || "") === String(original.lodgingLocation || "") &&
     String(row[addressCol] || "") === String(original.address || "") &&
     String(row[contactCol] || "") === String(original.contact || "") &&
@@ -694,6 +694,40 @@ function normalizeTourGroup(val) {
   if (g === "mens" || g === "men's" || g === "men") return "men";
   if (g === "ladies" || g === "ladies'") return "ladies";
   return g;
+}
+
+function lodgingDateKey(val) {
+  if (val === null || val === undefined || val === "") return "";
+
+  if (Object.prototype.toString.call(val) === "[object Date]" && !isNaN(val.getTime())) {
+    return toIsoDateKey(val);
+  }
+
+  var s = String(val).trim();
+  if (!s) return "";
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return s;
+  }
+
+  var isoLike = new Date(s);
+  if (!isNaN(isoLike.getTime())) {
+    return toIsoDateKey(isoLike);
+  }
+
+  var withYear = new Date(s + ", 2026");
+  if (!isNaN(withYear.getTime())) {
+    return toIsoDateKey(withYear);
+  }
+
+  return s.toLowerCase();
+}
+
+function toIsoDateKey(dateObj) {
+  var y = dateObj.getFullYear();
+  var m = ("0" + (dateObj.getMonth() + 1)).slice(-2);
+  var d = ("0" + dateObj.getDate()).slice(-2);
+  return y + "-" + m + "-" + d;
 }
 
 function deleteLodging(ss, d) {
