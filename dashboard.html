@@ -623,13 +623,12 @@ function renderSchedule(rows, lodgingRows) {
       var lBadgeColor = lPink ? '#E879A0' : '#7BAFF8';
       var lBadgeBg = lPink ? 'rgba(232,121,160,0.18)' : 'rgba(123,175,248,0.15)';
       var lBadge = group === 'all' ? '<span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;background:' + lBadgeBg + ';color:' + lBadgeColor + ';margin-right:6px">' + (g==='ladies'?"Ladies'":"Men's") + '</span>' : '';
-      var lText = lEntries.length && lEntries[0]['Lodging Location'] ? lEntries[0]['Lodging Location'] : '<span style="color:var(--dim);font-style:italic">Not set</span>';
+      var lText = lEntries.length && lEntries[0]['Lodging Location'] ? lEntries[0]['Lodging Location'] : '<span style="color:var(--dim);font-style:italic">Missing row in sheet</span>';
       var lContact = lEntries.length && lEntries[0]['Contact'] ? ' · ' + lEntries[0]['Contact'] : '';
       var lNotes = lEntries.length && lEntries[0]['Notes'] ? ' <span style="color:var(--dim);font-size:11px;font-style:italic">— ' + lEntries[0]['Notes'] + '</span>' : '';
       html += '<div style="display:flex;align-items:center;justify-content:space-between;background:' + lBg + ';border:1px solid ' + lBorderColor + ';border-radius:6px;padding:7px 10px">';
       html += '<div style="font-size:12px;color:var(--text)">🛏️ ' + lBadge + lText + lContact + lNotes + '</div>';
-      var lEditLabel = lEntries.length && lEntries[0]['Lodging Location'] ? 'Edit' : '+ Add';
-      html += '<button class="edit-btn" onclick="editLodging(\'' + escapeDateStr(dateStr) + '\',\'' + g + '\')">' + lEditLabel + '</button>';
+      html += '<button class="edit-btn" onclick="editLodging(\'' + escapeDateStr(dateStr) + '\',\'' + g + '\')">Edit</button>';
       html += '</div>';
     });
     html += '</div>';
@@ -791,6 +790,10 @@ function editLodging(dateStr, group) {
       var d = raw.indexOf('T')>-1||raw.match(/^\d{4}-\d{2}-\d{2}/) ? new Date(raw).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : new Date(raw+', 2026').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
       return d === dateStr && (l['Tour Group']||'').toLowerCase() === group;
     });
+  }
+  if (!lEntries.length) {
+    alert('No existing lodging row for this date/group. Add it in the sheet first.');
+    return;
   }
   var l = lEntries[0] || {};
   editingLodgingOriginal = lEntries.length ? {
