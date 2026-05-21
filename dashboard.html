@@ -687,13 +687,15 @@ function saveEdit() {
     payload.date = document.getElementById('edit-row-index').value;
   }
 
+  console.log('saveEdit payload:', JSON.stringify(payload));
   fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify(payload) })
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      console.log('saveEdit response:', JSON.stringify(data));
       if (data.success) {
-        loadData(); // Refresh all data
+        loadData();
         closeEditModal();
-      } else { alert('Save failed'); }
+      } else { alert('Save failed: ' + (data.error || 'unknown error')); }
     })
     .catch(function(err) { alert('Save failed: ' + err.message); });
 }
@@ -768,10 +770,10 @@ loadData();
         <option>Other</option>
       </select>
     </div>
-    <div class="edit-field"><label>Church Name</label><input type="text" id="edit-church"></div>
+    <div class="edit-field"><label>Location Name</label><input type="text" id="edit-church"></div>
     <div class="edit-field"><label>City / State</label><input type="text" id="edit-city"></div>
     <div class="edit-field"><label>Pastor</label><input type="text" id="edit-pastor"></div>
-    <div class="edit-field"><label>Service Times</label><input type="text" id="edit-times" placeholder="e.g. 10:00 AM / 6:00 PM"></div>
+    <div class="edit-field"><label>Event Time</label><input type="text" id="edit-times" placeholder="e.g. 10:00 AM / 6:00 PM"></div>
     <div class="edit-field"><label>Lodging</label><input type="text" id="edit-lodging"></div>
     <div class="edit-field"><label>Notes</label><textarea id="edit-notes"></textarea></div>
     <div class="edit-btns">
