@@ -427,9 +427,17 @@ function scheduleIndexes(headers) {
     destination: headers.indexOf("Destination"),
     cityState: headers.indexOf("Destination City, State"),
     pastor: headers.indexOf("Pastor"),
-    eventTime: headers.indexOf("Event Time"),
+    eventTime: indexOfAny(headers, ["Event Time", "Event time"]),
     notes: headers.indexOf("Leader Notes")
   };
+}
+
+function indexOfAny(headers, names) {
+  for (var i = 0; i < names.length; i++) {
+    var idx = headers.indexOf(names[i]);
+    if (idx > -1) return idx;
+  }
+  return -1;
 }
 
 function scheduleRowMatches(row, idx, original) {

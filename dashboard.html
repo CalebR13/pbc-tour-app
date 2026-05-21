@@ -718,7 +718,7 @@ function deleteEvent(rowIdx) {
         destination: ev['Destination'] || '',
         cityState: ev['Destination City, State'] || '',
         pastor: ev['Pastor'] || '',
-        eventTime: ev['Event Time'] || '',
+        eventTime: ev['Event Time'] || ev['Event time'] || '',
         notes: ev['Leader Notes'] || ''
       }
     })
@@ -842,22 +842,20 @@ loadData();
     </div>
     <div class="edit-field"><label>Date</label><input type="date" id="edit-date" onchange="updateEditDayOfWeek()"></div>
     <div class="edit-field"><label>Day of Week (auto)</label><input type="text" id="edit-day-of-week" readonly></div>
-    <div class="edit-field"><label>Event Type</label>
-      <select id="edit-event-type">
-        <option>Travel</option>
-        <option>AM Service</option>
-        <option>PM Service</option>
-        <option>AM & PM Service</option>
-        <option>Midweek Service</option>
-        <option>Special</option>
-        <option>Teen Activity</option>
-        <option>College Activity</option>
-        <option>Camp / Conference</option>
-        <option>PBC Day</option>
-        <option>Rest Day</option>
-        <option>Other</option>
-      </select>
-    </div>
+    <div class="edit-field"><label>Event Type</label><input type="text" id="edit-event-type" list="event-type-suggestions" placeholder="Type event name"></div>
+    <datalist id="event-type-suggestions">
+      <option value="Travel"></option>
+      <option value="AM Service"></option>
+      <option value="PM Service"></option>
+      <option value="AM & PM Service"></option>
+      <option value="Midweek Service"></option>
+      <option value="Special"></option>
+      <option value="Teen Activity"></option>
+      <option value="College Activity"></option>
+      <option value="Camp / Conference"></option>
+      <option value="PBC Day"></option>
+      <option value="Rest Day"></option>
+    </datalist>
     <div class="edit-field"><label>Destination</label><input type="text" id="edit-church"></div>
     <div class="edit-field"><label>City / State</label><input type="text" id="edit-city"></div>
     <div class="edit-field"><label>Pastor</label><input type="text" id="edit-pastor"></div>
