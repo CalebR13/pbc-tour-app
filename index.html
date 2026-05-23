@@ -429,6 +429,7 @@ window.addEventListener('load', function() {
         <option>Transportation / Fuel</option>
         <option>Lodging</option>
         <option>Activities</option>
+        <option>Stipend</option>
         <option>Other</option>
       </select>
       <div id="x-cat-other" style="display:none;margin-top:8px"><input type="text" id="x-cat-other-detail" placeholder="Please describe…"></div>
@@ -679,7 +680,7 @@ function addEvalIncomeEntry() {
   d.innerHTML = `<div class="entry-num">Entry ${n}</div>`
     + (n > 1 ? `<button class="remove-btn" onclick="document.getElementById('eie-${n}').remove()">✕</button>` : '')
     + `<div class="field-group"><label class="field-label">Income Type <span class="req">*</span></label><select id="eit-${n}"><option value="">Select…</option><option>Cash</option><option>Check</option><option>Card</option><option>Venmo / Digital</option><option>Other</option></select></div>`
-    + `<div class="field-group"><label class="field-label">Income Category <span class="req">*</span></label><select id="eic-${n}" onchange="this.nextElementSibling.style.display=this.value==='Other'?'block':'none'"><option value="">Select…</option><option>Love Offering</option><option>Sales</option><option>Other</option></select><div style="display:none;margin-top:8px"><input type="text" id="eioc-${n}" placeholder="Please describe…"></div></div>`
+    + `<div class="field-group"><label class="field-label">Income Category <span class="req">*</span></label><select id="eic-${n}" onchange="this.nextElementSibling.style.display=this.value==='Other'?'block':'none'"><option value="">Select…</option><option>Love Offering</option><option>Other</option></select><div style="display:none;margin-top:8px"><input type="text" id="eioc-${n}" placeholder="Please describe…"></div></div>`
     + `<div class="field-group"><label class="field-label">Amount <span class="req">*</span></label><div class="amount-wrap"><span>$</span><input type="number" placeholder="0.00" step="0.01" min="0" id="eia-${n}"></div></div>`;
   document.getElementById('ei-entries').appendChild(d);
 }
@@ -750,7 +751,7 @@ function addEntry(){
   d.innerHTML=`<div class="entry-num">Entry ${n}</div>`
     +(n>1?`<button class="remove-btn" onclick="document.getElementById('ie-${n}').remove()">✕</button>`:'')
     +`<div class="field-group"><label class="field-label">Income Type <span class="req">*</span></label><select id="it-${n}"><option value="">Select…</option><option>Cash</option><option>Check</option><option>Card</option><option>Venmo / Digital</option><option>Other</option></select></div>`
-    +`<div class="field-group"><label class="field-label">Income Category <span class="req">*</span></label><select id="ic-${n}" onchange="this.nextElementSibling.style.display=this.value==='Other'?'block':'none'"><option value="">Select…</option><option>Love Offering</option><option>Sales</option><option>Other</option></select><div style="display:none;margin-top:8px"><input type="text" id="ioc-${n}" placeholder="Please describe…"></div></div>`
+    +`<div class="field-group"><label class="field-label">Income Category <span class="req">*</span></label><select id="ic-${n}" onchange="this.nextElementSibling.style.display=this.value==='Other'?'block':'none'"><option value="">Select…</option><option>Sales</option><option>Other</option></select><div style="display:none;margin-top:8px"><input type="text" id="ioc-${n}" placeholder="Please describe…"></div></div>`
     +`<div class="field-group"><label class="field-label">Amount <span class="req">*</span></label><div class="amount-wrap"><span>$</span><input type="number" placeholder="0.00" step="0.01" min="0" id="ia-${n}"></div></div>`;
   document.getElementById('i-entries').appendChild(d);
 }
