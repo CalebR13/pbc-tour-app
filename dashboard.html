@@ -91,6 +91,21 @@ td a:hover, .view-link:hover { text-decoration: underline; }
 .error-msg { color: var(--red); font-size: 13px; padding: 20px; text-align: center; }
 
 @media (max-width: 600px) { .chart-row { grid-template-columns: 1fr; } }
+.pin-screen { position: fixed; inset: 0; background: #2a2a2a; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+.pin-box { background: #333; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 36px 32px; text-align: center; max-width: 320px; width: 90%; }
+.pin-title { font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 800; color: #f0ede8; margin-bottom: 6px; }
+.pin-subtitle { font-size: 12px; color: #9a9590; margin-bottom: 24px; }
+.pin-dots { display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; }
+.pin-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.2); transition: all 0.2s; }
+.pin-dot.filled { background: #f7b214; border-color: #f7b214; }
+.pin-dot.error { background: #E05555; border-color: #E05555; }
+.pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pin-btn { background: #3d3d3d; border: 1px solid rgba(255,255,255,0.1); color: #f0ede8; border-radius: 10px; padding: 16px; font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 600; cursor: pointer; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
+.pin-btn:hover { background: #4a4a4a; border-color: var(--gold); }
+.pin-btn:active { transform: scale(0.95); background: #555; }
+.pin-btn.wide { grid-column: span 2; font-size: 14px; font-weight: 500; }
+.pin-btn.zero { }
+.pin-error { font-size: 13px; color: #E05555; margin-top: -8px; min-height: 18px; }
 .sched-lodging { display: flex; align-items: center; justify-content: space-between; background: rgba(123,175,248,0.08); border: 1px solid rgba(123,175,248,0.2); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 8px; }
 .sched-lodging-pink { background: rgba(232,121,160,0.08); border-color: rgba(232,121,160,0.2); }
 .sched-lodging-text { font-size: 12px; color: var(--text); display: flex; align-items: center; gap: 6px; flex: 1; }
@@ -128,6 +143,33 @@ td a:hover, .view-link:hover { text-decoration: underline; }
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0YQJy7Ea4w0sUIo4kvYaaei407FxBMPlUgPrwLtirI2aoL4fk/exec";
 </script>
+
+<div class="pin-screen" id="pin-screen">
+  <div class="pin-box">
+    <div class="pin-title"><span style="color:#f7b214">P</span>BC Tour Dashboard</div>
+    <div class="pin-subtitle">Enter your PIN to continue</div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-grid">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn wide" onclick="pinClear()">Clear</button>
+      <button class="pin-btn zero" onclick="pinPress('0')">0</button>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+</div>
 
 <div class="topbar">
   <h1><span>P</span>BC Tour Dashboard</h1>
@@ -816,8 +858,57 @@ function saveLodging() {
 
 // deleteLodging removed — lodging is permanent per day
 
+// ── PIN ────────────────────────────────────────────────────
+var CORRECT_PIN = '1234'; // ← Change this to your PIN
+var pinEntry = '';
+var pinLocked = false;
+
+function pinPress(digit) {
+  if (pinLocked) return;
+  if (pinEntry.length >= 4) return;
+  pinEntry += digit;
+  updatePinDots();
+  if (pinEntry.length === 4) {
+    setTimeout(checkPin, 150);
+  }
+}
+
+function pinClear() {
+  pinEntry = '';
+  pinLocked = false;
+  updatePinDots(false);
+  document.getElementById('pin-error').textContent = '';
+}
+
+function updatePinDots(error) {
+  for (var i = 0; i < 4; i++) {
+    var dot = document.getElementById('pd' + i);
+    dot.classList.remove('filled', 'error');
+    if (error) { if (i < pinEntry.length) dot.classList.add('error'); }
+    else { if (i < pinEntry.length) dot.classList.add('filled'); }
+  }
+}
+
+function checkPin() {
+  if (pinEntry === CORRECT_PIN) {
+    sessionStorage.setItem('pbc-unlocked', 'true');
+    document.getElementById('pin-screen').style.display = 'none';
+    loadData();
+  } else {
+    pinLocked = true;
+    updatePinDots(true);
+    document.getElementById('pin-error').textContent = 'Incorrect PIN. Try again.';
+    setTimeout(function() { pinClear(); }, 1500);
+  }
+}
+
+// Check if already unlocked this session
+if (sessionStorage.getItem('pbc-unlocked') === 'true') {
+  document.getElementById('pin-screen').style.display = 'none';
+}
+
 setInterval(loadData, 60000);
-loadData();
+if (sessionStorage.getItem('pbc-unlocked') === 'true') { loadData(); }
 </script>
 <!-- Edit Schedule Modal -->
 <div class="edit-modal" id="edit-modal">
