@@ -192,6 +192,15 @@ var activeFilter = 'all';
 var chartCat = null;
 var chartDate = null;
 
+var catColorMap = {
+  'Food & Meals':          '#f7b214',
+  'Transportation / Fuel': '#7BAFF8',
+  'Lodging':               '#2ECC8A',
+  'Activities':            '#A78BFA',
+  'Stipend':               '#FB923C',
+  'Other':                 '#9a9590'
+};
+
 function setFilter(f, btn) {
   activeFilter = f;
   document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
