@@ -287,14 +287,6 @@ function renderFinances(rows) {
   var cats = {};
   rows.forEach(function(r) { var c = r['Category'] || 'Other'; cats[c] = (cats[c] || 0) + (parseFloat(r['Amount ($)']) || 0); });
   var catKeys = Object.keys(cats);
-  var catColorMap = {
-    'Food & Meals':          '#f7b214',
-    'Transportation / Fuel': '#7BAFF8',
-    'Lodging':               '#2ECC8A',
-    'Activities':            '#A78BFA',
-    'Stipend':               '#FB923C',
-    'Other':                 '#9a9590'
-  };
   var fallbacks = ['#E05555','#F472B6','#34D399','#FB923C'];
   var fbIdx = 0;
   var colors = catKeys.map(function(c) { return catColorMap[c] || fallbacks[fbIdx++] || '#ccc'; });
@@ -307,7 +299,7 @@ function renderFinances(rows) {
 
   html += '<div class="chart-row">';
   html += '<div class="chart-wrap"><div class="chart-title">By category</div><canvas id="chart-cat"></canvas></div>';
-  html += '<div class="chart-wrap"><div class="chart-title">By date</div><canvas id="chart-date"></canvas></div>';
+  html += '<div class="chart-wrap"><div class="chart-title">By week (starting Monday)</div><canvas id="chart-date"></canvas></div>';
   html += '</div>';
 
   html += '<div class="table-wrap"><div class="table-head"><h3>All Expenses</h3><button class="export-btn" onclick="exportCSV(\'expenses\')">Export CSV</button></div><div class="table-scroll"><table><thead><tr><th>Date</th><th>Amount</th><th>Category</th><th>Submitted By</th><th>Receipt</th></tr></thead><tbody>';
@@ -317,7 +309,10 @@ function renderFinances(rows) {
     rows.slice().reverse().forEach(function(r) {
       var amt = parseFloat(r['Amount ($)']) || 0;
       var link = r['Receipt Link'] && r['Receipt Link'].indexOf('http') === 0 ? '<a href="' + r['Receipt Link'] + '" target="_blank">View</a>' : '-';
-      html += '<tr><td style="font-family:\'DM Mono\',monospace;font-size:12px">' + fmtDate(r['Expense Date']) + '</td><td style="color:var(--red);font-family:\'DM Mono\',monospace">$' + amt.toFixed(2) + '</td><td><span class="badge badge-gold">' + (r['Category'] || '-') + '</span></td><td style="color:var(--muted)">' + (r['Submitted By'] || '-') + '</td><td>' + link + '</td></tr>';
+      var cat = r['Category'] || '-';
+      var catColor = catColorMap[cat] || '#9a9590';
+      var catBg = catColor + '22';
+      html += '<tr><td style="font-family:\'DM Mono\',monospace;font-size:12px">' + fmtDate(r['Expense Date']) + '</td><td style="color:var(--red);font-family:\'DM Mono\',monospace">$' + amt.toFixed(2) + '</td><td><span class="badge" style="background:' + catBg + ';color:' + catColor + '">' + cat + '</span></td><td style="color:var(--muted)">' + (r['Submitted By'] || '-') + '</td><td>' + link + '</td></tr>';
     });
   }
   html += '</tbody></table></div></div>';
@@ -335,12 +330,61 @@ function renderFinances(rows) {
   var byDate = {};
   rows.forEach(function(r) { var d = String(r['Expense Date']).split('T')[0]; byDate[d] = (byDate[d] || 0) + (parseFloat(r['Amount ($)']) || 0); });
   var dates = Object.keys(byDate).sort();
+  // Group by week starting Monday
+  function getWeekKey(dateStr) {
+    var d = new Date(dateStr + 'T12:00:00');
+    var day = d.getDay(); // 0=Sun, 1=Mon
+    var diff = (day === 0) ? -6 : 1 - day; // days to Monday
+    var mon = new Date(d);
+    mon.setDate(d.getDate() + diff);
+    return mon.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  }
+
+  var allCats = Object.keys(catColorMap);
+  var weekCatData = {}; // weekKey -> {cat: total}
+  rows.forEach(function(r) {
+    var raw = String(r['Expense Date'] || '');
+    if (!raw || raw === 'undefined') return;
+    var dateKey = raw.indexOf('T') > -1 ? raw.split('T')[0] : raw;
+    var wk = getWeekKey(dateKey);
+    var cat = r['Category'] || 'Other';
+    if (!weekCatData[wk]) weekCatData[wk] = {};
+    weekCatData[wk][cat] = (weekCatData[wk][cat] || 0) + (parseFloat(r['Amount ($)']) || 0);
+  });
+
+  var weeks = Object.keys(weekCatData).sort(function(a, b) { return new Date(a + ' 2026') - new Date(b + ' 2026'); });
+  var usedCats = [];
+  allCats.forEach(function(c) {
+    if (rows.some(function(r) { return (r['Category']||'Other') === c; })) usedCats.push(c);
+  });
+
   if (chartDate) chartDate.destroy();
-  if (dates.length) {
+  if (weeks.length) {
     chartDate = new Chart(document.getElementById('chart-date').getContext('2d'), {
       type: 'bar',
-      data: { labels: dates, datasets: [{ data: dates.map(function(d) { return byDate[d].toFixed(2); }), backgroundColor: 'rgba(247,178,20,0.75)', borderRadius: 4 }] },
-      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#4A4740', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#4A4740', font: { size: 10 }, callback: function(v) { return '$' + v; } }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+      data: {
+        labels: weeks.map(function(w) { return 'Wk ' + w; }),
+        datasets: usedCats.map(function(cat) {
+          var col = catColorMap[cat] || '#9a9590';
+          return {
+            label: cat,
+            data: weeks.map(function(wk) { return (weekCatData[wk][cat] || 0).toFixed(2); }),
+            backgroundColor: col + 'CC',
+            borderColor: col,
+            borderWidth: 1,
+            borderRadius: 3
+          };
+        })
+      },
+      options: {
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#7A766D', font: { size: 10 }, boxWidth: 10, padding: 8 } }
+        },
+        scales: {
+          x: { ticks: { color: '#4A4740', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#4A4740', font: { size: 10 }, callback: function(v) { return '$' + v; } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
     });
   }
 }
