@@ -287,7 +287,17 @@ function renderFinances(rows) {
   var cats = {};
   rows.forEach(function(r) { var c = r['Category'] || 'Other'; cats[c] = (cats[c] || 0) + (parseFloat(r['Amount ($)']) || 0); });
   var catKeys = Object.keys(cats);
-  var colors = ['#f7b214','#2ECC8A','#7BAFF8','#E05555','#A78BFA','#F472B6'];
+  var catColorMap = {
+    'Food & Meals':          '#f7b214',
+    'Transportation / Fuel': '#7BAFF8',
+    'Lodging':               '#2ECC8A',
+    'Activities':            '#A78BFA',
+    'Stipend':               '#FB923C',
+    'Other':                 '#9a9590'
+  };
+  var fallbacks = ['#E05555','#F472B6','#34D399','#FB923C'];
+  var fbIdx = 0;
+  var colors = catKeys.map(function(c) { return catColorMap[c] || fallbacks[fbIdx++] || '#ccc'; });
 
   var html = '<div class="metrics">';
   html += '<div class="metric"><div class="metric-label">Total Expenses</div><div class="metric-value red">$' + total.toFixed(2) + '</div><div class="metric-sub">' + rows.length + ' records</div></div>';
@@ -492,41 +502,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── SCHEDULE ──────────────────────────────────────────────────
 var editingRow = null;
-var editingLodgingOriginal = null;
 
 function escapeDateStr(s) { return s.replace(/'/g, '&#39;'); }
-
-function formatDateInputValue(raw) {
-  if (!raw) return '';
-  var d;
-  if (raw instanceof Date) d = raw;
-  else if (String(raw).indexOf('T') > -1 || /^\d{4}-\d{2}-\d{2}/.test(String(raw))) d = new Date(raw);
-  else d = new Date(String(raw) + ', 2026');
-  if (isNaN(d)) return '';
-  var y = d.getFullYear();
-  var m = String(d.getMonth() + 1).padStart(2, '0');
-  var day = String(d.getDate()).padStart(2, '0');
-  return y + '-' + m + '-' + day;
-}
-
-function formatDisplayDateFromInput(dateInput) {
-  if (!dateInput) return '';
-  var d = new Date(dateInput + 'T12:00:00');
-  if (isNaN(d)) return '';
-  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-}
-
-function dayOfWeekFromInput(dateInput) {
-  if (!dateInput) return '';
-  var d = new Date(dateInput + 'T12:00:00');
-  if (isNaN(d)) return '';
-  return d.toLocaleDateString('en-US', { weekday: 'long' });
-}
-
-function updateEditDayOfWeek() {
-  var dateVal = document.getElementById('edit-date').value;
-  document.getElementById('edit-day-of-week').value = dayOfWeekFromInput(dateVal);
-}
 
 function renderSchedule(rows, lodgingRows) {
   if (lodgingRows === undefined) lodgingRows = (cachedData && cachedData.lodging) ? cachedData.lodging : [];
@@ -586,8 +563,8 @@ function renderSchedule(rows, lodgingRows) {
     html += '</div>';
 
     // Events
-    var addGroup = group === 'all' ? 'ladies' : group;
     if (events.length === 0) {
+      var addGroup = group === 'all' ? 'ladies' : group;
       html += '<div class="sched-event" style="border-style:dashed;opacity:0.4;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--dim)">No events</span><button class="edit-btn" onclick="openAddModal(\'' + escapeDateStr(dateStr) + '\',\'' + addGroup + '\')">+ Add</button></div>';
     } else {
       events.forEach(function(ev) {
@@ -601,7 +578,7 @@ function renderSchedule(rows, lodgingRows) {
         html += '<div class="sched-event' + (isToday?' today':'') + '" style="border-left:3px solid ' + borderColor + ';padding-left:12px">';
         var evType = ev['Event'] || '';
         html += '<div class="sched-event-title"><span>' + (evType||'—') + badge + '</span><div style="display:flex;gap:4px"><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button><button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteEvent(' + rowIdx + ')">✕</button></div></div>';
-        if (ev['Event Time']) html += '<div class="sched-event-time">⏰ ' + ev['Event Time'] + '</div>';
+        if (ev['Event time']) html += '<div class="sched-event-time">⏰ ' + ev['Event time'] + '</div>';
         var loc = [ev['Destination'],ev['Destination City, State']].filter(Boolean).join(' · ');
         if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
         if (ev['Pastor']) html += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
@@ -623,12 +600,13 @@ function renderSchedule(rows, lodgingRows) {
       var lBadgeColor = lPink ? '#E879A0' : '#7BAFF8';
       var lBadgeBg = lPink ? 'rgba(232,121,160,0.18)' : 'rgba(123,175,248,0.15)';
       var lBadge = group === 'all' ? '<span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;background:' + lBadgeBg + ';color:' + lBadgeColor + ';margin-right:6px">' + (g==='ladies'?"Ladies'":"Men's") + '</span>' : '';
-      var lText = lEntries.length && lEntries[0]['Lodging Location'] ? lEntries[0]['Lodging Location'] : '<span style="color:var(--dim);font-style:italic">Missing row in sheet</span>';
+      var lText = lEntries.length && lEntries[0]['Lodging Location'] ? lEntries[0]['Lodging Location'] : '<span style="color:var(--dim);font-style:italic">Not set</span>';
       var lContact = lEntries.length && lEntries[0]['Contact'] ? ' · ' + lEntries[0]['Contact'] : '';
       var lNotes = lEntries.length && lEntries[0]['Notes'] ? ' <span style="color:var(--dim);font-size:11px;font-style:italic">— ' + lEntries[0]['Notes'] + '</span>' : '';
       html += '<div style="display:flex;align-items:center;justify-content:space-between;background:' + lBg + ';border:1px solid ' + lBorderColor + ';border-radius:6px;padding:7px 10px">';
       html += '<div style="font-size:12px;color:var(--text)">🛏️ ' + lBadge + lText + lContact + lNotes + '</div>';
-      html += '<button class="edit-btn" onclick="editLodging(\'' + escapeDateStr(dateStr) + '\',\'' + g + '\')">Edit</button>';
+      var lEditLabel = lEntries.length && lEntries[0]['Lodging Location'] ? 'Edit' : '+ Add';
+      html += '<button class="edit-btn" onclick="editLodging(\'' + escapeDateStr(dateStr) + '\',\'' + g + '\')">' + lEditLabel + '</button>';
       html += '</div>';
     });
     html += '</div>';
@@ -657,8 +635,6 @@ function openEditModal(rowIdx) {
     if (!isNaN(d)) displayDate = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
   }
   document.getElementById('edit-modal-title').textContent = 'Edit — ' + displayDate;
-  document.getElementById('edit-date').value = formatDateInputValue(rawDate);
-  updateEditDayOfWeek();
   document.getElementById('edit-event-type').value = ev['Event'] || ev['Event Type'] || '';
   document.getElementById('edit-church').value = ev['Destination'] || '';
   document.getElementById('edit-city').value = ev['Destination City, State'] || '';
@@ -668,24 +644,6 @@ function openEditModal(rowIdx) {
   document.getElementById('edit-notes').value = ev['Leader Notes'] || '';
   document.getElementById('edit-tour-group').value = ev['Tour Group'] || '';
   document.getElementById('save-btn-label').textContent = 'Save Changes';
-  document.getElementById('edit-modal').classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-
-function openAddModal(dateStr, group) {
-  editingRow = null;
-  var initialDate = formatDateInputValue(dateStr);
-  document.getElementById('edit-modal-title').textContent = 'Add Event — ' + (dateStr || 'New Date');
-  document.getElementById('edit-date').value = initialDate;
-  updateEditDayOfWeek();
-  document.getElementById('edit-event-type').value = 'Travel';
-  document.getElementById('edit-church').value = '';
-  document.getElementById('edit-city').value = '';
-  document.getElementById('edit-pastor').value = '';
-  document.getElementById('edit-times').value = '';
-  document.getElementById('edit-notes').value = '';
-  document.getElementById('edit-tour-group').value = group || 'ladies';
-  document.getElementById('save-btn-label').textContent = 'Add Event';
   document.getElementById('edit-modal').classList.add('show');
   document.body.style.overflow = 'hidden';
 }
@@ -711,35 +669,23 @@ function deleteEvent(rowIdx) {
     headers: {'Content-Type': 'text/plain;charset=utf-8'},
     body: JSON.stringify({
       action: 'deleteScheduleEvent',
-      original: {
-        tourGroup: ev['Tour Group'] || '',
-        date: ev['Date'] || '',
-        eventType: ev['Event'] || '',
-        destination: ev['Destination'] || '',
-        cityState: ev['Destination City, State'] || '',
-        pastor: ev['Pastor'] || '',
-        eventTime: ev['Event Time'] || ev['Event time'] || '',
-        notes: ev['Leader Notes'] || ''
-      }
+      tourGroup: ev['Tour Group'],
+      date: date,
+      originalEventType: evType
     })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data.success) { loadData(); }
-    else { alert('Delete failed: ' + (data.error || 'unknown error')); }
+    else { alert('Delete failed'); }
   })
   .catch(function(err) { alert('Delete failed: ' + err.message); });
 }
 
 function saveEdit() {
-  var dateInput = document.getElementById('edit-date').value;
-  var displayDate = formatDisplayDateFromInput(dateInput);
-  var dayOfWeek = dayOfWeekFromInput(dateInput);
   var tourGroup = document.getElementById('edit-tour-group').value;
   var payload = {
     tourGroup: tourGroup,
-    date: displayDate,
-    dayOfWeek: dayOfWeek,
     eventType: document.getElementById('edit-event-type').value,
     churchName: document.getElementById('edit-church').value,
     cityState: document.getElementById('edit-city').value,
@@ -748,25 +694,15 @@ function saveEdit() {
     notes: document.getElementById('edit-notes').value
   };
 
-  if (!payload.tourGroup || !payload.date) {
-    alert('Tour Group and Date are required.');
-    return;
-  }
-
   if (editingRow) {
+    // Editing existing row
     payload.action = 'updateSchedule';
-    payload.original = {
-      tourGroup: editingRow['Tour Group'] || '',
-      date: editingRow['Date'] || '',
-      eventType: editingRow['Event'] || editingRow['Event Type'] || '',
-      destination: editingRow['Destination'] || '',
-      cityState: editingRow['Destination City, State'] || '',
-      pastor: editingRow['Pastor'] || '',
-      eventTime: editingRow['Event Time'] || editingRow['Event time'] || '',
-      notes: editingRow['Leader Notes'] || ''
-    };
+    payload.date = editingRow['Date'];
+    payload.originalEventType = editingRow['Event Type'] || editingRow['Event'] || '';
   } else {
+    // Adding new row
     payload.action = 'addScheduleEvent';
+    payload.date = document.getElementById('edit-row-index').value;
   }
 
   console.log('saveEdit payload:', JSON.stringify(payload));
@@ -783,6 +719,7 @@ function saveEdit() {
 }
 
 function editLodging(dateStr, group) {
+  var lKey = dateStr + '|' + group;
   var lEntries = [];
   if (cachedData && cachedData.lodging) {
     lEntries = cachedData.lodging.filter(function(l) {
@@ -791,19 +728,7 @@ function editLodging(dateStr, group) {
       return d === dateStr && (l['Tour Group']||'').toLowerCase() === group;
     });
   }
-  if (!lEntries.length) {
-    alert('No existing lodging row for this date/group. Add it in the sheet first.');
-    return;
-  }
   var l = lEntries[0] || {};
-  editingLodgingOriginal = lEntries.length ? {
-    tourGroup: l['Tour Group'] || group,
-    date: l['Date'] || dateStr,
-    lodgingLocation: l['Lodging Location'] || '',
-    address: l['Address'] || '',
-    contact: l['Contact'] || '',
-    notes: l['Notes'] || ''
-  } : null;
   document.getElementById('lodging-modal-title').textContent = (group==='ladies'?"Ladies'":"Men's") + ' Lodging — ' + dateStr;
   document.getElementById('lodging-date').value = dateStr;
   document.getElementById('lodging-group').value = group;
@@ -818,25 +743,22 @@ function editLodging(dateStr, group) {
 function closeLodgingModal() {
   document.getElementById('lodging-modal').classList.remove('show');
   document.body.style.overflow = '';
-  editingLodgingOriginal = null;
 }
 
 function saveLodging() {
-  var payload = {
-    action: 'updateLodging',
-    tourGroup: document.getElementById('lodging-group').value,
-    date: document.getElementById('lodging-date').value,
-    lodgingLocation: document.getElementById('lodging-location').value,
-    address: document.getElementById('lodging-address').value,
-    contact: document.getElementById('lodging-contact').value,
-    notes: document.getElementById('lodging-notes').value
-  };
-  if (editingLodgingOriginal) payload.original = editingLodgingOriginal;
   fetch(SCRIPT_URL, {
     method: 'POST',
     headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify(payload)
-  }).then(function(r){return r.json();}).then(function(d){ if(d.success){loadData();closeLodgingModal();}else{alert('Save failed: ' + (d.error || 'unknown error'));}}).catch(function(e){alert('Save failed: '+e.message);});
+    body: JSON.stringify({
+      action: 'updateLodging',
+      tourGroup: document.getElementById('lodging-group').value,
+      date: document.getElementById('lodging-date').value,
+      lodgingLocation: document.getElementById('lodging-location').value,
+      address: document.getElementById('lodging-address').value,
+      contact: document.getElementById('lodging-contact').value,
+      notes: document.getElementById('lodging-notes').value
+    })
+  }).then(function(r){return r.json();}).then(function(d){ if(d.success){loadData();closeLodgingModal();}else{alert('Save failed');}}).catch(function(e){alert('Save failed: '+e.message);});
 }
 
 // deleteLodging removed — lodging is permanent per day
@@ -848,28 +770,24 @@ loadData();
 <div class="edit-modal" id="edit-modal">
   <div class="edit-box">
     <h3 id="edit-modal-title">Edit Event</h3>
-    <div class="edit-field"><label>Tour Group</label>
-      <select id="edit-tour-group">
-        <option value="ladies">Ladies</option>
-        <option value="mens">Men's</option>
+    <input type="hidden" id="edit-row-index">
+    <input type="hidden" id="edit-tour-group">
+    <div class="edit-field"><label>Event Type</label>
+      <select id="edit-event-type">
+        <option>Travel</option>
+        <option>AM Service</option>
+        <option>PM Service</option>
+        <option>AM & PM Service</option>
+        <option>Midweek Service</option>
+        <option>Special</option>
+        <option>Teen Activity</option>
+        <option>College Activity</option>
+        <option>Camp / Conference</option>
+        <option>PBC Day</option>
+        <option>Rest Day</option>
+        <option>Other</option>
       </select>
     </div>
-    <div class="edit-field"><label>Date</label><input type="date" id="edit-date" onchange="updateEditDayOfWeek()"></div>
-    <div class="edit-field"><label>Day of Week (auto)</label><input type="text" id="edit-day-of-week" readonly></div>
-    <div class="edit-field"><label>Event Type</label><input type="text" id="edit-event-type" list="event-type-suggestions" placeholder="Type event name"></div>
-    <datalist id="event-type-suggestions">
-      <option value="Travel"></option>
-      <option value="AM Service"></option>
-      <option value="PM Service"></option>
-      <option value="AM & PM Service"></option>
-      <option value="Midweek Service"></option>
-      <option value="Special"></option>
-      <option value="Teen Activity"></option>
-      <option value="College Activity"></option>
-      <option value="Camp / Conference"></option>
-      <option value="PBC Day"></option>
-      <option value="Rest Day"></option>
-    </datalist>
     <div class="edit-field"><label>Destination</label><input type="text" id="edit-church"></div>
     <div class="edit-field"><label>City / State</label><input type="text" id="edit-city"></div>
     <div class="edit-field"><label>Pastor</label><input type="text" id="edit-pastor"></div>
