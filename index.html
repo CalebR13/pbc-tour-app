@@ -434,6 +434,12 @@ window.addEventListener('load', function() {
       <div id="x-cat-other" style="display:none;margin-top:8px"><input type="text" id="x-cat-other-detail" placeholder="Please describe…"></div>
     </div>
     <div class="field-group">
+      <label class="opt" for="x-cash" style="cursor:pointer">
+        <input type="checkbox" id="x-cash" style="width:18px;height:18px;accent-color:var(--gold)">
+        <span class="opt-lbl">Paid with cash</span>
+      </label>
+    </div>
+    <div class="field-group">
       <label class="field-label">Upload receipt <span class="req">*</span></label>
       <div class="file-drop" onclick="document.getElementById('x-file').click()">
         <input type="file" id="x-file" accept="image/*,.pdf" onchange="fname(this,'x-fname')">
@@ -879,7 +885,7 @@ function buildPayload(){
     }
     return evalPayload;
   }
-  if(finType==='expense'){const cat=v('x-cat');const catDetail=cat==='Other'?v('x-cat-other-detail'):'';return{role:'expenses',type:'Expense',tourGroup,date:v('x-date'),amount:v('x-amt'),category:cat,categoryDetail:catDetail};}
+  if(finType==='expense'){const cat=v('x-cat');const catDetail=cat==='Other'?v('x-cat-other-detail'):'';return{role:'expenses',type:'Expense',tourGroup,date:v('x-date'),amount:v('x-amt'),category:cat,categoryDetail:catDetail,paidWithCash:document.getElementById('x-cash').checked?'Yes':''};}
   if(finType==='income'){const entries=[];document.querySelectorAll('.income-entry').forEach(e=>{const n=e.id.replace('ie-','');entries.push({amount:v('ia-'+n),category:v('ic-'+n),type:v('it-'+n)});});return{role:'expenses',type:'Income',tourGroup,church:v('i-church'),date:v('i-date'),entries};}
   if(role==='socials') return{role:'socials',tourGroup,location:v('soc-location'),caption:v('soc-caption')};
   if(role==='infocard') return{role:'infocard',tourGroup,firstName:v('c-first'),lastName:v('c-last'),gender:rv['c-gender'],dob:v('c-dob'),gradYear:v('c-grad'),email:v('c-email'),phone:v('c-phone'),city:v('c-city'),state:v('c-state'),zip:v('c-zip'),church:v('c-church'),pastor:v('c-pastor'),interests:checked('c-interests').join(', '),majors:checked('c-majors').join(', ')};

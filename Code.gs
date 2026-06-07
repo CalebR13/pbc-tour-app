@@ -26,7 +26,7 @@ var HEADERS = {
     "Notes for Future Visits", "Recommend Returning (0-5)", "Submitted By"
   ],
   "Expenses": [
-    "Timestamp", "Tour Group", "Expense Date", "Amount ($)", "Category", "Category Details", "Receipt Link", "Submitted By"
+    "Timestamp", "Tour Group", "Expense Date", "Amount ($)", "Category", "Category Details", "Receipt Link", "Submitted By", "Paid with Cash"
   ],
   "Income": [
     "Timestamp", "Tour Group", "Church Name / City / State", "Income Date",
@@ -292,7 +292,8 @@ function writeExpense(ss, d) {
     d.category   || "",
     d.categoryDetail || "",
     receiptUrl   || "No receipt",
-    d.submittedBy    || ""
+    d.submittedBy    || "",
+    d.paidWithCash || ""
   ]);
 }
 
