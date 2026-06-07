@@ -91,6 +91,21 @@ td a:hover, .view-link:hover { text-decoration: underline; }
 .error-msg { color: var(--red); font-size: 13px; padding: 20px; text-align: center; }
 
 @media (max-width: 600px) { .chart-row { grid-template-columns: 1fr; } }
+.pin-screen { position: fixed; inset: 0; background: #2a2a2a; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+.pin-box { background: #333; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 36px 32px; text-align: center; max-width: 320px; width: 90%; }
+.pin-title { font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 800; color: #f0ede8; margin-bottom: 6px; }
+.pin-subtitle { font-size: 12px; color: #9a9590; margin-bottom: 24px; }
+.pin-dots { display: flex; justify-content: center; gap: 12px; margin-bottom: 24px; }
+.pin-dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.2); transition: all 0.2s; }
+.pin-dot.filled { background: #f7b214; border-color: #f7b214; }
+.pin-dot.error { background: #E05555; border-color: #E05555; }
+.pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pin-btn { background: #3d3d3d; border: 1px solid rgba(255,255,255,0.1); color: #f0ede8; border-radius: 10px; padding: 16px; font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 600; cursor: pointer; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
+.pin-btn:hover { background: #4a4a4a; border-color: var(--gold); }
+.pin-btn:active { transform: scale(0.95); background: #555; }
+.pin-btn.wide { grid-column: span 2; font-size: 14px; font-weight: 500; }
+.pin-btn.zero { }
+.pin-error { font-size: 13px; color: #E05555; margin-top: -8px; min-height: 18px; }
 .sched-lodging { display: flex; align-items: center; justify-content: space-between; background: rgba(123,175,248,0.08); border: 1px solid rgba(123,175,248,0.2); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 8px; }
 .sched-lodging-pink { background: rgba(232,121,160,0.08); border-color: rgba(232,121,160,0.2); }
 .sched-lodging-text { font-size: 12px; color: var(--text); display: flex; align-items: center; gap: 6px; flex: 1; }
@@ -128,6 +143,33 @@ td a:hover, .view-link:hover { text-decoration: underline; }
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0YQJy7Ea4w0sUIo4kvYaaei407FxBMPlUgPrwLtirI2aoL4fk/exec";
 </script>
+
+<div class="pin-screen" id="pin-screen">
+  <div class="pin-box">
+    <div class="pin-title"><span style="color:#f7b214">P</span>BC Tour Dashboard</div>
+    <div class="pin-subtitle">Enter your PIN to continue</div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-grid">
+      <button class="pin-btn" onclick="pinPress('1')">1</button>
+      <button class="pin-btn" onclick="pinPress('2')">2</button>
+      <button class="pin-btn" onclick="pinPress('3')">3</button>
+      <button class="pin-btn" onclick="pinPress('4')">4</button>
+      <button class="pin-btn" onclick="pinPress('5')">5</button>
+      <button class="pin-btn" onclick="pinPress('6')">6</button>
+      <button class="pin-btn" onclick="pinPress('7')">7</button>
+      <button class="pin-btn" onclick="pinPress('8')">8</button>
+      <button class="pin-btn" onclick="pinPress('9')">9</button>
+      <button class="pin-btn wide" onclick="pinClear()">Clear</button>
+      <button class="pin-btn zero" onclick="pinPress('0')">0</button>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+</div>
 
 <div class="topbar">
   <h1><span>P</span>BC Tour Dashboard</h1>
@@ -191,6 +233,15 @@ var cachedData = null;
 var activeFilter = 'all';
 var chartCat = null;
 var chartDate = null;
+
+var catColorMap = {
+  'Food & Meals':          '#f7b214',
+  'Transportation / Fuel': '#7BAFF8',
+  'Lodging':               '#2ECC8A',
+  'Activities':            '#A78BFA',
+  'Stipend':               '#FB923C',
+  'Other':                 '#9a9590'
+};
 
 function setFilter(f, btn) {
   activeFilter = f;
@@ -287,7 +338,9 @@ function renderFinances(rows) {
   var cats = {};
   rows.forEach(function(r) { var c = r['Category'] || 'Other'; cats[c] = (cats[c] || 0) + (parseFloat(r['Amount ($)']) || 0); });
   var catKeys = Object.keys(cats);
-  var colors = ['#f7b214','#2ECC8A','#7BAFF8','#E05555','#A78BFA','#F472B6'];
+  var fallbacks = ['#E05555','#F472B6','#34D399','#FB923C'];
+  var fbIdx = 0;
+  var colors = catKeys.map(function(c) { return catColorMap[c] || fallbacks[fbIdx++] || '#ccc'; });
 
   var html = '<div class="metrics">';
   html += '<div class="metric"><div class="metric-label">Total Expenses</div><div class="metric-value red">$' + total.toFixed(2) + '</div><div class="metric-sub">' + rows.length + ' records</div></div>';
@@ -297,7 +350,7 @@ function renderFinances(rows) {
 
   html += '<div class="chart-row">';
   html += '<div class="chart-wrap"><div class="chart-title">By category</div><canvas id="chart-cat"></canvas></div>';
-  html += '<div class="chart-wrap"><div class="chart-title">By date</div><canvas id="chart-date"></canvas></div>';
+  html += '<div class="chart-wrap"><div class="chart-title">By week (starting Monday)</div><canvas id="chart-date"></canvas></div>';
   html += '</div>';
 
   html += '<div class="table-wrap"><div class="table-head"><h3>All Expenses</h3><button class="export-btn" onclick="exportCSV(\'expenses\')">Export CSV</button></div><div class="table-scroll"><table><thead><tr><th>Date</th><th>Amount</th><th>Category</th><th>Cash</th><th>Submitted By</th><th>Receipt</th></tr></thead><tbody>';
@@ -307,7 +360,10 @@ function renderFinances(rows) {
     rows.slice().reverse().forEach(function(r) {
       var amt = parseFloat(r['Amount ($)']) || 0;
       var link = r['Receipt Link'] && r['Receipt Link'].indexOf('http') === 0 ? '<a href="' + r['Receipt Link'] + '" target="_blank">View</a>' : '-';
-      html += '<tr><td style="font-family:\'DM Mono\',monospace;font-size:12px">' + fmtDate(r['Expense Date']) + '</td><td style="color:var(--red);font-family:\'DM Mono\',monospace">$' + amt.toFixed(2) + '</td><td><span class="badge badge-gold">' + (r['Category'] || '-') + '</span></td><td style="color:var(--muted)">' + (r['Paid with Cash'] || '-') + '</td><td style="color:var(--muted)">' + (r['Submitted By'] || '-') + '</td><td>' + link + '</td></tr>';
+      var cat = r['Category'] || '-';
+      var catColor = catColorMap[cat] || '#9a9590';
+      var catBg = catColor + '22';
+      html += '<tr><td style="font-family:\'DM Mono\',monospace;font-size:12px">' + fmtDate(r['Expense Date']) + '</td><td style="color:var(--red);font-family:\'DM Mono\',monospace">$' + amt.toFixed(2) + '</td><td><span class="badge" style="background:' + catBg + ';color:' + catColor + '">' + cat + '</span></td><td style="color:var(--muted)">' + (r['Paid with Cash'] || '-') + '</td><td style="color:var(--muted)">' + (r['Submitted By'] || '-') + '</td><td>' + link + '</td></tr>';
     });
   }
   html += '</tbody></table></div></div>';
@@ -325,12 +381,61 @@ function renderFinances(rows) {
   var byDate = {};
   rows.forEach(function(r) { var d = String(r['Expense Date']).split('T')[0]; byDate[d] = (byDate[d] || 0) + (parseFloat(r['Amount ($)']) || 0); });
   var dates = Object.keys(byDate).sort();
+  // Group by week starting Monday
+  function getWeekKey(dateStr) {
+    var d = new Date(dateStr + 'T12:00:00');
+    var day = d.getDay(); // 0=Sun, 1=Mon
+    var diff = (day === 0) ? -6 : 1 - day; // days to Monday
+    var mon = new Date(d);
+    mon.setDate(d.getDate() + diff);
+    return mon.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+  }
+
+  var allCats = Object.keys(catColorMap);
+  var weekCatData = {}; // weekKey -> {cat: total}
+  rows.forEach(function(r) {
+    var raw = String(r['Expense Date'] || '');
+    if (!raw || raw === 'undefined') return;
+    var dateKey = raw.indexOf('T') > -1 ? raw.split('T')[0] : raw;
+    var wk = getWeekKey(dateKey);
+    var cat = r['Category'] || 'Other';
+    if (!weekCatData[wk]) weekCatData[wk] = {};
+    weekCatData[wk][cat] = (weekCatData[wk][cat] || 0) + (parseFloat(r['Amount ($)']) || 0);
+  });
+
+  var weeks = Object.keys(weekCatData).sort(function(a, b) { return new Date(a + ' 2026') - new Date(b + ' 2026'); });
+  var usedCats = [];
+  allCats.forEach(function(c) {
+    if (rows.some(function(r) { return (r['Category']||'Other') === c; })) usedCats.push(c);
+  });
+
   if (chartDate) chartDate.destroy();
-  if (dates.length) {
+  if (weeks.length) {
     chartDate = new Chart(document.getElementById('chart-date').getContext('2d'), {
       type: 'bar',
-      data: { labels: dates, datasets: [{ data: dates.map(function(d) { return byDate[d].toFixed(2); }), backgroundColor: 'rgba(247,178,20,0.75)', borderRadius: 4 }] },
-      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#4A4740', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#4A4740', font: { size: 10 }, callback: function(v) { return '$' + v; } }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+      data: {
+        labels: weeks.map(function(w) { return 'Wk ' + w; }),
+        datasets: usedCats.map(function(cat) {
+          var col = catColorMap[cat] || '#9a9590';
+          return {
+            label: cat,
+            data: weeks.map(function(wk) { return (weekCatData[wk][cat] || 0).toFixed(2); }),
+            backgroundColor: col + 'CC',
+            borderColor: col,
+            borderWidth: 1,
+            borderRadius: 3
+          };
+        })
+      },
+      options: {
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#7A766D', font: { size: 10 }, boxWidth: 10, padding: 8 } }
+        },
+        scales: {
+          x: { ticks: { color: '#4A4740', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#4A4740', font: { size: 10 }, callback: function(v) { return '$' + v; } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
     });
   }
 }
@@ -492,41 +597,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ── SCHEDULE ──────────────────────────────────────────────────
 var editingRow = null;
-var editingLodgingOriginal = null;
 
 function escapeDateStr(s) { return s.replace(/'/g, '&#39;'); }
-
-function formatDateInputValue(raw) {
-  if (!raw) return '';
-  var d;
-  if (raw instanceof Date) d = raw;
-  else if (String(raw).indexOf('T') > -1 || /^\d{4}-\d{2}-\d{2}/.test(String(raw))) d = new Date(raw);
-  else d = new Date(String(raw) + ', 2026');
-  if (isNaN(d)) return '';
-  var y = d.getFullYear();
-  var m = String(d.getMonth() + 1).padStart(2, '0');
-  var day = String(d.getDate()).padStart(2, '0');
-  return y + '-' + m + '-' + day;
-}
-
-function formatDisplayDateFromInput(dateInput) {
-  if (!dateInput) return '';
-  var d = new Date(dateInput + 'T12:00:00');
-  if (isNaN(d)) return '';
-  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-}
-
-function dayOfWeekFromInput(dateInput) {
-  if (!dateInput) return '';
-  var d = new Date(dateInput + 'T12:00:00');
-  if (isNaN(d)) return '';
-  return d.toLocaleDateString('en-US', { weekday: 'long' });
-}
-
-function updateEditDayOfWeek() {
-  var dateVal = document.getElementById('edit-date').value;
-  document.getElementById('edit-day-of-week').value = dayOfWeekFromInput(dateVal);
-}
 
 function renderSchedule(rows, lodgingRows) {
   if (lodgingRows === undefined) lodgingRows = (cachedData && cachedData.lodging) ? cachedData.lodging : [];
@@ -586,8 +658,8 @@ function renderSchedule(rows, lodgingRows) {
     html += '</div>';
 
     // Events
-    var addGroup = group === 'all' ? 'ladies' : group;
     if (events.length === 0) {
+      var addGroup = group === 'all' ? 'ladies' : group;
       html += '<div class="sched-event" style="border-style:dashed;opacity:0.4;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--dim)">No events</span><button class="edit-btn" onclick="openAddModal(\'' + escapeDateStr(dateStr) + '\',\'' + addGroup + '\')">+ Add</button></div>';
     } else {
       events.forEach(function(ev) {
@@ -601,7 +673,7 @@ function renderSchedule(rows, lodgingRows) {
         html += '<div class="sched-event' + (isToday?' today':'') + '" style="border-left:3px solid ' + borderColor + ';padding-left:12px">';
         var evType = ev['Event'] || '';
         html += '<div class="sched-event-title"><span>' + (evType||'—') + badge + '</span><div style="display:flex;gap:4px"><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button><button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteEvent(' + rowIdx + ')">✕</button></div></div>';
-        if (ev['Event Time']) html += '<div class="sched-event-time">⏰ ' + ev['Event Time'] + '</div>';
+        if (ev['Event time']) html += '<div class="sched-event-time">⏰ ' + ev['Event time'] + '</div>';
         var loc = [ev['Destination'],ev['Destination City, State']].filter(Boolean).join(' · ');
         if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
         if (ev['Pastor']) html += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
@@ -623,12 +695,13 @@ function renderSchedule(rows, lodgingRows) {
       var lBadgeColor = lPink ? '#E879A0' : '#7BAFF8';
       var lBadgeBg = lPink ? 'rgba(232,121,160,0.18)' : 'rgba(123,175,248,0.15)';
       var lBadge = group === 'all' ? '<span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px;background:' + lBadgeBg + ';color:' + lBadgeColor + ';margin-right:6px">' + (g==='ladies'?"Ladies'":"Men's") + '</span>' : '';
-      var lText = lEntries.length && lEntries[0]['Lodging Location'] ? lEntries[0]['Lodging Location'] : '<span style="color:var(--dim);font-style:italic">Missing row in sheet</span>';
+      var lText = lEntries.length && lEntries[0]['Lodging Location'] ? lEntries[0]['Lodging Location'] : '<span style="color:var(--dim);font-style:italic">Not set</span>';
       var lContact = lEntries.length && lEntries[0]['Contact'] ? ' · ' + lEntries[0]['Contact'] : '';
       var lNotes = lEntries.length && lEntries[0]['Notes'] ? ' <span style="color:var(--dim);font-size:11px;font-style:italic">— ' + lEntries[0]['Notes'] + '</span>' : '';
       html += '<div style="display:flex;align-items:center;justify-content:space-between;background:' + lBg + ';border:1px solid ' + lBorderColor + ';border-radius:6px;padding:7px 10px">';
       html += '<div style="font-size:12px;color:var(--text)">🛏️ ' + lBadge + lText + lContact + lNotes + '</div>';
-      html += '<button class="edit-btn" onclick="editLodging(\'' + escapeDateStr(dateStr) + '\',\'' + g + '\')">Edit</button>';
+      var lEditLabel = lEntries.length && lEntries[0]['Lodging Location'] ? 'Edit' : '+ Add';
+      html += '<button class="edit-btn" onclick="editLodging(\'' + escapeDateStr(dateStr) + '\',\'' + g + '\')">' + lEditLabel + '</button>';
       html += '</div>';
     });
     html += '</div>';
@@ -657,8 +730,6 @@ function openEditModal(rowIdx) {
     if (!isNaN(d)) displayDate = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
   }
   document.getElementById('edit-modal-title').textContent = 'Edit — ' + displayDate;
-  document.getElementById('edit-date').value = formatDateInputValue(rawDate);
-  updateEditDayOfWeek();
   document.getElementById('edit-event-type').value = ev['Event'] || ev['Event Type'] || '';
   document.getElementById('edit-church').value = ev['Destination'] || '';
   document.getElementById('edit-city').value = ev['Destination City, State'] || '';
@@ -668,24 +739,6 @@ function openEditModal(rowIdx) {
   document.getElementById('edit-notes').value = ev['Leader Notes'] || '';
   document.getElementById('edit-tour-group').value = ev['Tour Group'] || '';
   document.getElementById('save-btn-label').textContent = 'Save Changes';
-  document.getElementById('edit-modal').classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-
-function openAddModal(dateStr, group) {
-  editingRow = null;
-  var initialDate = formatDateInputValue(dateStr);
-  document.getElementById('edit-modal-title').textContent = 'Add Event — ' + (dateStr || 'New Date');
-  document.getElementById('edit-date').value = initialDate;
-  updateEditDayOfWeek();
-  document.getElementById('edit-event-type').value = 'Travel';
-  document.getElementById('edit-church').value = '';
-  document.getElementById('edit-city').value = '';
-  document.getElementById('edit-pastor').value = '';
-  document.getElementById('edit-times').value = '';
-  document.getElementById('edit-notes').value = '';
-  document.getElementById('edit-tour-group').value = group || 'ladies';
-  document.getElementById('save-btn-label').textContent = 'Add Event';
   document.getElementById('edit-modal').classList.add('show');
   document.body.style.overflow = 'hidden';
 }
@@ -711,35 +764,23 @@ function deleteEvent(rowIdx) {
     headers: {'Content-Type': 'text/plain;charset=utf-8'},
     body: JSON.stringify({
       action: 'deleteScheduleEvent',
-      original: {
-        tourGroup: ev['Tour Group'] || '',
-        date: ev['Date'] || '',
-        eventType: ev['Event'] || '',
-        destination: ev['Destination'] || '',
-        cityState: ev['Destination City, State'] || '',
-        pastor: ev['Pastor'] || '',
-        eventTime: ev['Event Time'] || ev['Event time'] || '',
-        notes: ev['Leader Notes'] || ''
-      }
+      tourGroup: ev['Tour Group'],
+      date: date,
+      originalEventType: evType
     })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data.success) { loadData(); }
-    else { alert('Delete failed: ' + (data.error || 'unknown error')); }
+    else { alert('Delete failed'); }
   })
   .catch(function(err) { alert('Delete failed: ' + err.message); });
 }
 
 function saveEdit() {
-  var dateInput = document.getElementById('edit-date').value;
-  var displayDate = formatDisplayDateFromInput(dateInput);
-  var dayOfWeek = dayOfWeekFromInput(dateInput);
   var tourGroup = document.getElementById('edit-tour-group').value;
   var payload = {
     tourGroup: tourGroup,
-    date: displayDate,
-    dayOfWeek: dayOfWeek,
     eventType: document.getElementById('edit-event-type').value,
     churchName: document.getElementById('edit-church').value,
     cityState: document.getElementById('edit-city').value,
@@ -748,25 +789,15 @@ function saveEdit() {
     notes: document.getElementById('edit-notes').value
   };
 
-  if (!payload.tourGroup || !payload.date) {
-    alert('Tour Group and Date are required.');
-    return;
-  }
-
   if (editingRow) {
+    // Editing existing row
     payload.action = 'updateSchedule';
-    payload.original = {
-      tourGroup: editingRow['Tour Group'] || '',
-      date: editingRow['Date'] || '',
-      eventType: editingRow['Event'] || editingRow['Event Type'] || '',
-      destination: editingRow['Destination'] || '',
-      cityState: editingRow['Destination City, State'] || '',
-      pastor: editingRow['Pastor'] || '',
-      eventTime: editingRow['Event Time'] || editingRow['Event time'] || '',
-      notes: editingRow['Leader Notes'] || ''
-    };
+    payload.date = editingRow['Date'];
+    payload.originalEventType = editingRow['Event Type'] || editingRow['Event'] || '';
   } else {
+    // Adding new row
     payload.action = 'addScheduleEvent';
+    payload.date = document.getElementById('edit-row-index').value;
   }
 
   console.log('saveEdit payload:', JSON.stringify(payload));
@@ -783,6 +814,7 @@ function saveEdit() {
 }
 
 function editLodging(dateStr, group) {
+  var lKey = dateStr + '|' + group;
   var lEntries = [];
   if (cachedData && cachedData.lodging) {
     lEntries = cachedData.lodging.filter(function(l) {
@@ -791,19 +823,7 @@ function editLodging(dateStr, group) {
       return d === dateStr && (l['Tour Group']||'').toLowerCase() === group;
     });
   }
-  if (!lEntries.length) {
-    alert('No existing lodging row for this date/group. Add it in the sheet first.');
-    return;
-  }
   var l = lEntries[0] || {};
-  editingLodgingOriginal = lEntries.length ? {
-    tourGroup: l['Tour Group'] || group,
-    date: l['Date'] || dateStr,
-    lodgingLocation: l['Lodging Location'] || '',
-    address: l['Address'] || '',
-    contact: l['Contact'] || '',
-    notes: l['Notes'] || ''
-  } : null;
   document.getElementById('lodging-modal-title').textContent = (group==='ladies'?"Ladies'":"Men's") + ' Lodging — ' + dateStr;
   document.getElementById('lodging-date').value = dateStr;
   document.getElementById('lodging-group').value = group;
@@ -818,58 +838,100 @@ function editLodging(dateStr, group) {
 function closeLodgingModal() {
   document.getElementById('lodging-modal').classList.remove('show');
   document.body.style.overflow = '';
-  editingLodgingOriginal = null;
 }
 
 function saveLodging() {
-  var payload = {
-    action: 'updateLodging',
-    tourGroup: document.getElementById('lodging-group').value,
-    date: document.getElementById('lodging-date').value,
-    lodgingLocation: document.getElementById('lodging-location').value,
-    address: document.getElementById('lodging-address').value,
-    contact: document.getElementById('lodging-contact').value,
-    notes: document.getElementById('lodging-notes').value
-  };
-  if (editingLodgingOriginal) payload.original = editingLodgingOriginal;
   fetch(SCRIPT_URL, {
     method: 'POST',
     headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify(payload)
-  }).then(function(r){return r.json();}).then(function(d){ if(d.success){loadData();closeLodgingModal();}else{alert('Save failed: ' + (d.error || 'unknown error'));}}).catch(function(e){alert('Save failed: '+e.message);});
+    body: JSON.stringify({
+      action: 'updateLodging',
+      tourGroup: document.getElementById('lodging-group').value,
+      date: document.getElementById('lodging-date').value,
+      lodgingLocation: document.getElementById('lodging-location').value,
+      address: document.getElementById('lodging-address').value,
+      contact: document.getElementById('lodging-contact').value,
+      notes: document.getElementById('lodging-notes').value
+    })
+  }).then(function(r){return r.json();}).then(function(d){ if(d.success){loadData();closeLodgingModal();}else{alert('Save failed');}}).catch(function(e){alert('Save failed: '+e.message);});
 }
 
 // deleteLodging removed — lodging is permanent per day
 
+// ── PIN ────────────────────────────────────────────────────
+var CORRECT_PIN = '1611'; // ← Change this to your PIN
+var pinEntry = '';
+var pinLocked = false;
+
+function pinPress(digit) {
+  if (pinLocked) return;
+  if (pinEntry.length >= 4) return;
+  pinEntry += digit;
+  updatePinDots();
+  if (pinEntry.length === 4) {
+    setTimeout(checkPin, 150);
+  }
+}
+
+function pinClear() {
+  pinEntry = '';
+  pinLocked = false;
+  updatePinDots(false);
+  document.getElementById('pin-error').textContent = '';
+}
+
+function updatePinDots(error) {
+  for (var i = 0; i < 4; i++) {
+    var dot = document.getElementById('pd' + i);
+    dot.classList.remove('filled', 'error');
+    if (error) { if (i < pinEntry.length) dot.classList.add('error'); }
+    else { if (i < pinEntry.length) dot.classList.add('filled'); }
+  }
+}
+
+function checkPin() {
+  if (pinEntry === CORRECT_PIN) {
+    sessionStorage.setItem('pbc-unlocked', 'true');
+    document.getElementById('pin-screen').style.display = 'none';
+    loadData();
+  } else {
+    pinLocked = true;
+    updatePinDots(true);
+    document.getElementById('pin-error').textContent = 'Incorrect PIN. Try again.';
+    setTimeout(function() { pinClear(); }, 1500);
+  }
+}
+
+// Check if already unlocked this session
+if (sessionStorage.getItem('pbc-unlocked') === 'true') {
+  document.getElementById('pin-screen').style.display = 'none';
+}
+
 setInterval(loadData, 60000);
-loadData();
+if (sessionStorage.getItem('pbc-unlocked') === 'true') { loadData(); }
 </script>
 <!-- Edit Schedule Modal -->
 <div class="edit-modal" id="edit-modal">
   <div class="edit-box">
     <h3 id="edit-modal-title">Edit Event</h3>
-    <div class="edit-field"><label>Tour Group</label>
-      <select id="edit-tour-group">
-        <option value="ladies">Ladies</option>
-        <option value="mens">Men's</option>
+    <input type="hidden" id="edit-row-index">
+    <input type="hidden" id="edit-tour-group">
+    <div class="edit-field"><label>Event Type</label>
+      <select id="edit-event-type">
+        <option>Travel</option>
+        <option>AM Service</option>
+        <option>PM Service</option>
+        <option>AM & PM Service</option>
+        <option>Midweek Service</option>
+        <option>Special</option>
+        <option>Teen Activity</option>
+        <option>College Activity</option>
+        <option>Camp / Conference</option>
+        <option>PBC Day</option>
+        <option>Rest Day</option>
+        <option>Other</option>
       </select>
     </div>
-    <div class="edit-field"><label>Date</label><input type="date" id="edit-date" onchange="updateEditDayOfWeek()"></div>
-    <div class="edit-field"><label>Day of Week (auto)</label><input type="text" id="edit-day-of-week" readonly></div>
-    <div class="edit-field"><label>Event Type</label><input type="text" id="edit-event-type" list="event-type-suggestions" placeholder="Type event name"></div>
-    <datalist id="event-type-suggestions">
-      <option value="Travel"></option>
-      <option value="AM Service"></option>
-      <option value="PM Service"></option>
-      <option value="AM & PM Service"></option>
-      <option value="Midweek Service"></option>
-      <option value="Special"></option>
-      <option value="Teen Activity"></option>
-      <option value="College Activity"></option>
-      <option value="Camp / Conference"></option>
-      <option value="PBC Day"></option>
-      <option value="Rest Day"></option>
-    </datalist>
     <div class="edit-field"><label>Destination</label><input type="text" id="edit-church"></div>
     <div class="edit-field"><label>City / State</label><input type="text" id="edit-city"></div>
     <div class="edit-field"><label>Pastor</label><input type="text" id="edit-pastor"></div>

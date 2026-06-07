@@ -10,7 +10,7 @@ A web app for the Providence Baptist College tour team.
 
 ## Deployment
 
-- **Form + Dashboard**: https://calebr13.github.io/pbc-tour-app/
+- **Form**: https://calebr13.github.io/pbc-tour-app/
 - **Dashboard**: https://calebr13.github.io/pbc-tour-app/dashboard.html
 - **GitHub Repo**: https://github.com/calebr13/pbc-tour-app
 
