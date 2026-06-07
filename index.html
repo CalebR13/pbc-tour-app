@@ -439,6 +439,7 @@ window.addEventListener('load', function() {
         <input type="checkbox" id="x-cash" style="width:18px;height:18px;accent-color:var(--gold)">
         <span class="opt-lbl">Paid with cash</span>
       </label>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)">If checked, a receipt is optional.</div>
     </div>
     <div class="field-group">
       <label class="field-label">Upload receipt <span class="req">*</span></label>
@@ -898,7 +899,7 @@ async function submit(){
     // Step 1: submit form data
     const submittedBy = v('submitted-by');
     if(!submittedBy){ const b=document.getElementById('err'); b.textContent='Please select your name before submitting.'; b.style.display='block'; document.getElementById('overlay').classList.remove('show'); document.getElementById('btn-sub').disabled=false; return; }
-    if(finType==='expense'){ const rf=document.getElementById('x-file'); if(!rf||rf.files.length===0){ const b=document.getElementById('err'); b.textContent='A photo of the receipt is required. Please go back and attach one.'; b.style.display='block'; document.getElementById('overlay').classList.remove('show'); document.getElementById('btn-sub').disabled=false; return; } }
+    if(finType==='expense'){ const rf=document.getElementById('x-file'); const paidWithCash=document.getElementById('x-cash') && document.getElementById('x-cash').checked; if(!paidWithCash && (!rf||rf.files.length===0)){ const b=document.getElementById('err'); b.textContent='A photo of the receipt is required unless the expense was paid with cash.'; b.style.display='block'; document.getElementById('overlay').classList.remove('show'); document.getElementById('btn-sub').disabled=false; return; } }
     const payload=buildPayload();
     payload.submittedBy = submittedBy;
     const r=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
