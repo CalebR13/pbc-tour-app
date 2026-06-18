@@ -32,6 +32,12 @@ body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(
 .filter-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
 .filter-btn { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; font-family: 'Montserrat', sans-serif; cursor: pointer; border: 1px solid var(--border2); background: transparent; color: var(--muted); transition: all 0.2s; }
 .filter-btn.active { background: var(--surface2); border-color: var(--gold); color: var(--gold); }
+.fin-filter-wrap { margin-bottom: 16px; margin-top: 4px; }
+.fin-filter-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+.fin-filter-pills { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.fin-filter-pill { padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; font-family: 'Montserrat', sans-serif; cursor: pointer; border: 1px solid var(--border2); background: var(--surface); color: var(--muted); transition: all 0.2s; white-space: nowrap; flex: 0 0 auto; }
+.fin-filter-pill:hover { border-color: var(--gold); color: var(--text); }
+.fin-filter-pill.active { background: var(--surface2); border-color: var(--gold); color: var(--gold); box-shadow: inset 0 0 0 1px rgba(247,178,20,0.15); }
 .tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 24px; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; overscroll-behavior-x: contain; scroll-snap-type: x proximity; }
 .tab { padding: 12px 18px; font-size: 13px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; font-family: 'Montserrat', sans-serif; }
 .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
@@ -196,16 +202,17 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0Y
 </div>
 
 <div class="panel active" id="panel-finances">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;margin-top:4px">
-    <span style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">Filter by category:</span>
-    <select id="cat-filter" onchange="filterByCategory()" style="background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:7px 14px;border-radius:6px;font-family:Montserrat,sans-serif;font-size:13px;cursor:pointer">
-      <option value="">All Categories</option>
-      <option>Food &amp; Meals</option>
-      <option>Transportation / Fuel</option>
-      <option>Lodging</option>
-      <option>Activities</option>
-      <option>Other</option>
-    </select>
+  <div class="fin-filter-wrap">
+    <div class="fin-filter-label">Filter by category:</div>
+    <div class="fin-filter-pills" id="cat-filter-pills">
+      <button class="fin-filter-pill active" onclick="setCategoryFilter('', this)">All Categories</button>
+      <button class="fin-filter-pill" onclick="setCategoryFilter('Food &amp; Meals', this)">Food &amp; Meals</button>
+      <button class="fin-filter-pill" onclick="setCategoryFilter('Transportation / Fuel', this)">Transportation / Fuel</button>
+      <button class="fin-filter-pill" onclick="setCategoryFilter('Lodging', this)">Lodging</button>
+      <button class="fin-filter-pill" onclick="setCategoryFilter('Activities', this)">Activities</button>
+      <button class="fin-filter-pill" onclick="setCategoryFilter('Stipend', this)">Stipend</button>
+      <button class="fin-filter-pill" onclick="setCategoryFilter('Other', this)">Other</button>
+    </div>
   </div>
   <div id="fin-body"><div class="loading"><div class="spinner"></div>Loading...</div></div>
 </div>
@@ -231,6 +238,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0Y
 <script>
 var cachedData = null;
 var activeFilter = 'all';
+var activeCategory = '';
 var chartCat = null;
 var chartDate = null;
 
@@ -281,10 +289,16 @@ function fmtTime(val) {
 
 function filterByCategory() {
   if (!cachedData) return;
-  var cat = document.getElementById('cat-filter').value;
   var rows = filterRows(cachedData.expenses || []);
-  if (cat) rows = rows.filter(function(r) { return (r['Category'] || '') === cat; });
+  if (activeCategory) rows = rows.filter(function(r) { return (r['Category'] || '') === activeCategory; });
   renderFinances(rows);
+}
+
+function setCategoryFilter(cat, btn) {
+  activeCategory = cat;
+  document.querySelectorAll('.fin-filter-pill').forEach(function(pill) { pill.classList.remove('active'); });
+  btn.classList.add('active');
+  filterByCategory();
 }
 
 function setLive(isLive) {
@@ -321,10 +335,8 @@ function loadData() {
 }
 
 function renderAll(data) {
-  var catFilter = document.getElementById('cat-filter');
-  var activeCat = catFilter ? catFilter.value : '';
   var expRows = filterRows(data.expenses || []);
-  if (activeCat) expRows = expRows.filter(function(r) { return (r['Category'] || '') === activeCat; });
+  if (activeCategory) expRows = expRows.filter(function(r) { return (r['Category'] || '') === activeCategory; });
   renderFinances(expRows);
   renderIncome(filterRows(data.income || []));
   renderEvaluations(filterRows(data.evaluations || []));
@@ -335,6 +347,9 @@ function renderAll(data) {
 
 function renderFinances(rows) {
   var total = rows.reduce(function(s, r) { return s + (parseFloat(r['Amount ($)']) || 0); }, 0);
+  var todayKey = expenseDateKey(new Date());
+  var spentTodayRows = rows.filter(function(r) { return expenseDateKey(r['Expense Date']) === todayKey; });
+  var spentToday = spentTodayRows.reduce(function(s, r) { return s + (parseFloat(r['Amount ($)']) || 0); }, 0);
   var cats = {};
   rows.forEach(function(r) { var c = r['Category'] || 'Other'; cats[c] = (cats[c] || 0) + (parseFloat(r['Amount ($)']) || 0); });
   var catKeys = Object.keys(cats);
@@ -344,6 +359,7 @@ function renderFinances(rows) {
 
   var html = '<div class="metrics">';
   html += '<div class="metric"><div class="metric-label">Total Expenses</div><div class="metric-value red">$' + total.toFixed(2) + '</div><div class="metric-sub">' + rows.length + ' records</div></div>';
+  html += '<div class="metric"><div class="metric-label">Spent Today</div><div class="metric-value gold">$' + spentToday.toFixed(2) + '</div><div class="metric-sub">' + spentTodayRows.length + ' records today</div></div>';
   html += '<div class="metric"><div class="metric-label">Categories</div><div class="metric-value blue">' + catKeys.length + '</div></div>';
   html += '<div class="metric"><div class="metric-label">Avg per Entry</div><div class="metric-value gold">' + (rows.length ? '$' + (total / rows.length).toFixed(2) : '-') + '</div></div>';
   html += '</div>';
@@ -438,6 +454,20 @@ function renderFinances(rows) {
       }
     });
   }
+}
+
+function expenseDateKey(val) {
+  if (!val) return '';
+  var d = new Date(val);
+  if (isNaN(d)) {
+    var raw = String(val).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    return '';
+  }
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
 }
 
 function renderIncome(rows) {
