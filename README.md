@@ -38,10 +38,37 @@ A web app for the Providence Baptist College tour team.
 ## Apps Script Functions
 
 - `setupSheets()` — Safe: only creates missing tabs, never deletes data
+- `addChurchLocationColumns()` — Safe: adds structured `Church Name`, `Church City`, `Church State` columns where missing
+- `migrateChurchLocationFields()` — Safe: backfills structured church location columns from existing combined church strings when possible
 - `seedLadiesSchedule()` — Populates Ladies tour schedule
 - `seedMensSchedule()` — Populates blank Men's schedule structure
 - `seedLadiesLodging()` — Populates Ladies lodging data
 - `DANGER_deleteAndRebuildAllSheets()` — ⚠️ Destructive: requires confirmation
+
+## Church Location Update
+
+The app now stores church information in both formats:
+
+- Legacy combined field: `Church Name / City / State`
+- Structured fields: `Church Name`, `Church City`, `Church State`
+
+Recommended rollout:
+
+1. Deploy the updated `Code.gs`
+2. Run `addChurchLocationColumns()` once
+3. Run `migrateChurchLocationFields()` once
+4. Manually review rows where city/state could not be inferred from older freeform entries
+
+This migration is non-destructive: it preserves the original combined church field and only fills the new structured columns.
+
+## Schedule Evaluation Flag
+
+The `Tour Schedule` sheet now supports a `Needs Evaluation` column.
+
+- `Yes` — show this stop in the Church Evaluation picker if no evaluation has been completed yet
+- blank or `No` — do not show it in the picker
+
+The app will still hide a stop after a matching evaluation has been submitted.
 
 ## Tour Groups
 

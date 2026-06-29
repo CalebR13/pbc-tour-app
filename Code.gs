@@ -17,9 +17,23 @@ var SHEET_NAMES = {
   log:         "Submission Log"
 };
 
+var STATE_NAME_TO_CODE = {
+  ALABAMA: "AL", ALASKA: "AK", ARIZONA: "AZ", ARKANSAS: "AR", CALIFORNIA: "CA",
+  COLORADO: "CO", CONNECTICUT: "CT", DELAWARE: "DE", FLORIDA: "FL", GEORGIA: "GA",
+  HAWAII: "HI", IDAHO: "ID", ILLINOIS: "IL", INDIANA: "IN", IOWA: "IA", KANSAS: "KS",
+  KENTUCKY: "KY", LOUISIANA: "LA", MAINE: "ME", MARYLAND: "MD", MASSACHUSETTS: "MA",
+  MICHIGAN: "MI", MINNESOTA: "MN", MISSISSIPPI: "MS", MISSOURI: "MO", MONTANA: "MT",
+  NEBRASKA: "NE", NEVADA: "NV", "NEW HAMPSHIRE": "NH", "NEW JERSEY": "NJ",
+  "NEW MEXICO": "NM", "NEW YORK": "NY", "NORTH CAROLINA": "NC", "NORTH DAKOTA": "ND",
+  OHIO: "OH", OKLAHOMA: "OK", OREGON: "OR", PENNSYLVANIA: "PA", "RHODE ISLAND": "RI",
+  "SOUTH CAROLINA": "SC", "SOUTH DAKOTA": "SD", TENNESSEE: "TN", TEXAS: "TX", UTAH: "UT",
+  VERMONT: "VT", VIRGINIA: "VA", WASHINGTON: "WA", "WEST VIRGINIA": "WV", WISCONSIN: "WI",
+  WYOMING: "WY"
+};
+
 var HEADERS = {
   "Church Evaluations": [
-    "Timestamp", "Tour Group", "Visit Date", "Church Name / City / State", "Pastor Name",
+    "Timestamp", "Tour Group", "Visit Date", "Church Name / City / State", "Church Name", "Church City", "Church State", "Pastor Name",
     "Teenagers in Attendance (est.)", "PBC Connections", "PBC Connection Details",
     "Other Bible College Connections", "Provided by Church",
     "Soul-Winning Rating (1-5)", "Differences from Standards",
@@ -29,13 +43,13 @@ var HEADERS = {
     "Timestamp", "Tour Group", "Expense Date", "Amount ($)", "Category", "Category Details", "Receipt Link", "Submitted By", "Paid with Cash"
   ],
   "Income": [
-    "Timestamp", "Tour Group", "Church Name / City / State", "Income Date",
+    "Timestamp", "Tour Group", "Church Name / City / State", "Church Name", "Church City", "Church State", "Income Date",
     "Amount ($)", "Income Category", "Income Type", "Submitted By"
   ],
   "Interest Cards": [
     "Timestamp", "Tour Group", "First Name", "Last Name", "Gender", "Date of Birth",
     "HS Grad Year", "Email", "Phone", "City", "State", "Zip",
-    "Church Name / City / State", "Pastor Name",
+    "Church Name / City / State", "Church Name", "Church City", "Church State", "Pastor Name",
     "Interests", "Majors of Interest", "Interest Form Photo Link", "Submitted By"
   ],
   "Submission Log": [
@@ -45,7 +59,7 @@ var HEADERS = {
     "Timestamp", "Tour Group", "Location", "Caption", "Submitted By"
   ],
   "Tour Schedule": [
-    "Tour Group", "Date", "Day of Week", "Event", "Destination", "Destination City, State", "Pastor", "Event Time", "Leader Notes"
+    "Tour Group", "Date", "Day of Week", "Event", "Needs Evaluation", "Destination", "Destination City, State", "Pastor", "Event Time", "Leader Notes"
   ],
   "Tour Lodging": [
     "Tour Group", "Date", "Lodging Location", "Address", "Contact", "Notes"
@@ -71,6 +85,8 @@ function setupSheets() {
       sheet.setFrozenRows(1);
       sheet.autoResizeColumns(1, hdrs.length);
       created.push(sheetName);
+    } else {
+      ensureSheetColumns(existing, HEADERS[sheetName]);
     }
   }
   if (created.length) {
@@ -255,23 +271,27 @@ function saveFileToDrive(folderId, fileName, mimeType, base64Data) {
 function writeEvaluation(ss, d) {
   var sheet = ss.getSheetByName(SHEET_NAMES.evaluations);
   if (!sheet) return;
-  sheet.appendRow([
-    new Date(),
-    d.tourGroup    || "Unknown",
-    d.date           || "",
-    d.church         || "",
-    d.pastor         || "",
-    d.teenagers      || "",
-    d.pbcConnections || "",
-    d.pbcDetails     || "",
-    d.otherColleges  || "",
-    d.provided       || "",
-    d.soulWinning    || 0,
-    d.differences    || "",
-    d.notes          || "",
-    d.recommend      || "",
-    d.submittedBy    || ""
-  ]);
+  var church = normalizeChurchFields(d);
+  appendRowByHeaders(sheet, {
+    "Timestamp": new Date(),
+    "Tour Group": d.tourGroup || "Unknown",
+    "Visit Date": d.date || "",
+    "Church Name / City / State": church.combined,
+    "Church Name": church.name,
+    "Church City": church.city,
+    "Church State": church.state,
+    "Pastor Name": d.pastor || "",
+    "Teenagers in Attendance (est.)": d.teenagers || "",
+    "PBC Connections": d.pbcConnections || "",
+    "PBC Connection Details": d.pbcDetails || "",
+    "Other Bible College Connections": d.otherColleges || "",
+    "Provided by Church": d.provided || "",
+    "Soul-Winning Rating (1-5)": d.soulWinning || 0,
+    "Differences from Standards": d.differences || "",
+    "Notes for Future Visits": d.notes || "",
+    "Recommend Returning (0-5)": d.recommend || "",
+    "Submitted By": d.submittedBy || ""
+  });
 }
 
 function writeExpense(ss, d) {
@@ -300,24 +320,29 @@ function writeExpense(ss, d) {
 function writeIncome(ss, d) {
   var sheet = ss.getSheetByName(SHEET_NAMES.income);
   if (!sheet) return;
+  var church = normalizeChurchFields(d);
   var entries = d.entries || [];
   entries.forEach(function(entry) {
-    sheet.appendRow([
-      new Date(),
-      d.tourGroup      || "Unknown",
-      d.church             || "",
-      d.date               || "",
-      parseFloat(entry.amount) || 0,
-      entry.category       || "",
-      entry.type           || "",
-      d.submittedBy        || ""
-    ]);
+    appendRowByHeaders(sheet, {
+      "Timestamp": new Date(),
+      "Tour Group": d.tourGroup || "Unknown",
+      "Church Name / City / State": church.combined,
+      "Church Name": church.name,
+      "Church City": church.city,
+      "Church State": church.state,
+      "Income Date": d.date || "",
+      "Amount ($)": parseFloat(entry.amount) || 0,
+      "Income Category": entry.category || "",
+      "Income Type": entry.type || "",
+      "Submitted By": d.submittedBy || ""
+    });
   });
 }
 
 function writeInfoCard(ss, d) {
   var sheet = ss.getSheetByName(SHEET_NAMES.infocards);
   if (!sheet) return;
+  var church = normalizeChurchFields(d);
 
   var photoUrl = "";
   if (d.formPhoto && d.formPhoto.data) {
@@ -325,26 +350,29 @@ function writeInfoCard(ss, d) {
     photoUrl = saveFileToDrive(FOLDER_MAVERICK, fileName, d.formPhoto.mimeType, d.formPhoto.data);
   }
 
-  sheet.appendRow([
-    new Date(),
-    d.tourGroup    || "Unknown",
-    d.firstName    || "",
-    d.lastName     || "",
-    d.gender       || "",
-    d.dob          || "",
-    d.gradYear     || "",
-    d.email        || "",
-    d.phone        || "",
-    d.city         || "",
-    d.state        || "",
-    d.zip          || "",
-    d.church       || "",
-    d.pastor       || "",
-    d.interests    || "",
-    d.majors       || "",
-    photoUrl       || "No photo",
-    d.submittedBy    || ""
-  ]);
+  appendRowByHeaders(sheet, {
+    "Timestamp": new Date(),
+    "Tour Group": d.tourGroup || "Unknown",
+    "First Name": d.firstName || "",
+    "Last Name": d.lastName || "",
+    "Gender": d.gender || "",
+    "Date of Birth": d.dob || "",
+    "HS Grad Year": d.gradYear || "",
+    "Email": d.email || "",
+    "Phone": d.phone || "",
+    "City": d.city || "",
+    "State": d.state || "",
+    "Zip": d.zip || "",
+    "Church Name / City / State": church.combined,
+    "Church Name": church.name,
+    "Church City": church.city,
+    "Church State": church.state,
+    "Pastor Name": d.pastor || "",
+    "Interests": d.interests || "",
+    "Majors of Interest": d.majors || "",
+    "Interest Form Photo Link": photoUrl || "No photo",
+    "Submitted By": d.submittedBy || ""
+  });
 }
 
 function handleFileUpload(ss, d) {
@@ -403,6 +431,7 @@ function addScheduleEvent(ss, d) {
     d.date        || "",
     d.dayOfWeek   || dayOfWeekFromDateStr(d.date),
     d.eventType   || "",
+    d.needsEvaluation || "",
     d.churchName  || "",
     d.cityState   || "",
     d.pastor      || "",
@@ -425,6 +454,7 @@ function scheduleIndexes(headers) {
     date: headers.indexOf("Date"),
     dayOfWeek: headers.indexOf("Day of Week"),
     event: headers.indexOf("Event"),
+    needsEvaluation: headers.indexOf("Needs Evaluation"),
     destination: headers.indexOf("Destination"),
     cityState: headers.indexOf("Destination City, State"),
     pastor: headers.indexOf("Pastor"),
@@ -482,6 +512,7 @@ function updateScheduleRow(ss, d) {
       sheet.getRange(i + 1, idx.date + 1).setValue(d.date || "");
       sheet.getRange(i + 1, idx.dayOfWeek + 1).setValue(d.dayOfWeek || dayOfWeekFromDateStr(d.date));
       sheet.getRange(i + 1, idx.event + 1).setValue(d.eventType || "");
+      if (idx.needsEvaluation > -1) sheet.getRange(i + 1, idx.needsEvaluation + 1).setValue(d.needsEvaluation || "");
       sheet.getRange(i + 1, idx.destination + 1).setValue(d.churchName || "");
       sheet.getRange(i + 1, idx.cityState + 1).setValue(d.cityState || "");
       sheet.getRange(i + 1, idx.pastor + 1).setValue(d.pastor || "");
@@ -496,18 +527,161 @@ function updateScheduleRow(ss, d) {
 function writeLog(ss, d) {
   var sheet = ss.getSheetByName(SHEET_NAMES.log);
   if (!sheet) return;
+  var church = normalizeChurchFields(d);
   var summary = "";
   if (d.role === "evaluation")
-    summary = (d.church || "Unknown church") + " — Pastor " + (d.pastor || "");
+    summary = (church.combined || "Unknown church") + " — Pastor " + (d.pastor || "");
   if (d.role === "expenses" && d.type === "Expense")
     summary = "Expense $" + (d.amount || "0") + " — " + (d.category || "");
   if (d.role === "expenses" && d.type === "Income")
-    summary = "Income from " + (d.church || "Unknown") + " (" + ((d.entries || []).length) + " entries)";
+    summary = "Income from " + (church.combined || "Unknown") + " (" + ((d.entries || []).length) + " entries)";
   if (d.role === "socials")
     summary = "Photos uploaded — " + (d.location || "Unknown location");
   if (d.role === "infocard")
-    summary = (d.firstName || "") + " " + (d.lastName || "") + " — " + (d.church || "");
+    summary = (d.firstName || "") + " " + (d.lastName || "") + " — " + (church.combined || "");
   sheet.appendRow([new Date(), d.role, d.type || "", summary]);
+}
+
+function ensureSheetColumns(sheet, expectedHeaders) {
+  if (!sheet) return;
+  var lastColumn = sheet.getLastColumn();
+  var existingHeaders = lastColumn ? sheet.getRange(1, 1, 1, lastColumn).getValues()[0] : [];
+  expectedHeaders.forEach(function(header) {
+    if (existingHeaders.indexOf(header) === -1) {
+      sheet.insertColumnAfter(sheet.getLastColumn() || 1);
+      var col = sheet.getLastColumn();
+      sheet.getRange(1, col).setValue(header)
+        .setFontWeight("bold")
+        .setBackground("#1C1A17")
+        .setFontColor("#F5F2EC");
+      existingHeaders.push(header);
+    }
+  });
+  if (sheet.getLastRow() > 0) sheet.setFrozenRows(1);
+}
+
+function appendRowByHeaders(sheet, valuesByHeader) {
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var row = headers.map(function(header) {
+    return Object.prototype.hasOwnProperty.call(valuesByHeader, header) ? valuesByHeader[header] : "";
+  });
+  sheet.appendRow(row);
+}
+
+function normalizeChurchFields(d) {
+  var name = safeTrim(d.churchName);
+  var city = safeTrim(d.churchCity);
+  var state = normalizeStateCode(d.churchState);
+  var combined = safeTrim(d.church);
+  if ((!name || !city || !state) && combined) {
+    var parsed = parseChurchLocationString(combined);
+    if (!name) name = parsed.name;
+    if (!city) city = parsed.city;
+    if (!state) state = parsed.state;
+  }
+  if (!combined) combined = formatChurchLocation(name, city, state);
+  return { name: name, city: city, state: state, combined: combined };
+}
+
+function formatChurchLocation(name, city, state) {
+  var parts = [];
+  if (safeTrim(name)) parts.push(safeTrim(name));
+  if (safeTrim(city)) parts.push(safeTrim(city));
+  if (safeTrim(state)) parts.push(normalizeStateCode(state));
+  return parts.join(", ");
+}
+
+function parseChurchLocationString(value) {
+  var raw = safeTrim(value);
+  if (!raw) return { name: "", city: "", state: "" };
+  var normalized = raw.replace(/\s*\/\s*/g, ", ").replace(/\s{2,}/g, " ");
+  var parts = normalized.split(",").map(function(part) { return safeTrim(part); }).filter(Boolean);
+  if (parts.length >= 3) {
+    var stateFromParts = normalizeStateCode(parts[parts.length - 1]);
+    if (!stateFromParts) return { name: raw, city: "", state: "" };
+    return {
+      name: parts.slice(0, parts.length - 2).join(", "),
+      city: parts[parts.length - 2],
+      state: stateFromParts
+    };
+  }
+  if (parts.length === 2) {
+    var tail = parts[1].split(/\s+/).filter(Boolean);
+    var tailState = tail.length >= 2 ? normalizeStateCode(tail[tail.length - 1]) : "";
+    if (tail.length >= 2 && tailState) {
+      return {
+        name: parts[0],
+        city: tail.slice(0, tail.length - 1).join(" "),
+        state: tailState
+      };
+    }
+  }
+  var match = normalized.match(/^(.*?)(?:,|\s+)([A-Za-z .'-]+?)\s+([A-Za-z]{2}|[A-Za-z]+)$/);
+  var matchedState = match ? normalizeStateCode(match[3]) : "";
+  if (match && matchedState) {
+    return {
+      name: safeTrim(match[1]),
+      city: safeTrim(match[2]),
+      state: matchedState
+    };
+  }
+  return { name: raw, city: "", state: "" };
+}
+
+function normalizeStateCode(value) {
+  var s = safeTrim(value);
+  if (!s) return "";
+  var upper = s.toUpperCase();
+  if (/^[A-Z]{2}$/.test(upper)) return upper;
+  return STATE_NAME_TO_CODE[upper] || "";
+}
+
+function safeTrim(value) {
+  return String(value || "").trim();
+}
+
+function addChurchLocationColumns() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ensureSheetColumns(ss.getSheetByName(SHEET_NAMES.evaluations), HEADERS["Church Evaluations"]);
+  ensureSheetColumns(ss.getSheetByName(SHEET_NAMES.income), HEADERS["Income"]);
+  ensureSheetColumns(ss.getSheetByName(SHEET_NAMES.infocards), HEADERS["Interest Cards"]);
+  Logger.log("Church location columns ensured.");
+}
+
+function migrateChurchLocationFields() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  addChurchLocationColumns();
+  migrateChurchLocationSheet(ss.getSheetByName(SHEET_NAMES.evaluations), "Church Name / City / State");
+  migrateChurchLocationSheet(ss.getSheetByName(SHEET_NAMES.income), "Church Name / City / State");
+  migrateChurchLocationSheet(ss.getSheetByName(SHEET_NAMES.infocards), "Church Name / City / State");
+}
+
+function migrateChurchLocationSheet(sheet, combinedHeader) {
+  if (!sheet) return;
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) return;
+  var headers = data[0];
+  var combinedCol = headers.indexOf(combinedHeader);
+  var nameCol = headers.indexOf("Church Name");
+  var cityCol = headers.indexOf("Church City");
+  var stateCol = headers.indexOf("Church State");
+  if (combinedCol === -1 || nameCol === -1 || cityCol === -1 || stateCol === -1) return;
+  var updates = 0;
+  for (var i = 1; i < data.length; i++) {
+    var combined = safeTrim(data[i][combinedCol]);
+    var currentName = safeTrim(data[i][nameCol]);
+    var currentCity = safeTrim(data[i][cityCol]);
+    var currentState = safeTrim(data[i][stateCol]);
+    if (currentName && currentCity && currentState) continue;
+    var parsed = parseChurchLocationString(combined);
+    var nextName = currentName || parsed.name;
+    var nextCity = currentCity || parsed.city;
+    var nextState = currentState || parsed.state;
+    if (nextName !== currentName) { sheet.getRange(i + 1, nameCol + 1).setValue(nextName); updates += 1; }
+    if (nextCity !== currentCity) { sheet.getRange(i + 1, cityCol + 1).setValue(nextCity); updates += 1; }
+    if (nextState !== currentState) { sheet.getRange(i + 1, stateCol + 1).setValue(nextState); updates += 1; }
+  }
+  Logger.log(sheet.getName() + ": updated " + updates + " church location cells.");
 }
 
 

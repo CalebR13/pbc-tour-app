@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PBC Board Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+  :root {
+    --bg: #f4f0e8;
+    --paper: #ffffff;
+    --ink: #1f1a14;
+    --muted: #6c655c;
+    --line: #ddd4c6;
+    --gold: #b98012;
+    --gold-soft: #f3e3b8;
+    --green: #1f7a4e;
+    --green-soft: #dcefe5;
+    --red: #b24545;
+    --red-soft: #f5dddd;
+    --blue: #315f9a;
+    --blue-soft: #dce7f6;
+    --shadow: 0 14px 40px rgba(29, 22, 14, 0.08);
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: linear-gradient(180deg, #efe7d9 0%, var(--bg) 100%);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+  }
+
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px;
+  }
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .toolbar-note {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .toolbar-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.8);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 10px 14px;
+    font: 600 13px 'Inter', sans-serif;
+    cursor: pointer;
+  }
+
+  .btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  .sheet {
+    background: var(--paper);
+    border: 1px solid rgba(115, 96, 69, 0.16);
+    border-radius: 28px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .hero {
+    padding: 34px 38px 28px;
+    background:
+      radial-gradient(circle at top right, rgba(185,128,18,0.18), transparent 26%),
+      linear-gradient(135deg, #231d17 0%, #2e261d 100%);
+    color: #f8f5ef;
+  }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 11px;
+    color: #d4c7b2;
+    margin-bottom: 12px;
+    font-weight: 700;
+  }
+
+  .hero-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.8fr);
+    gap: 24px;
+    align-items: end;
+  }
+
+  .hero h1 {
+    font-family: 'Source Serif 4', serif;
+    font-size: 38px;
+    line-height: 1.05;
+    margin: 0 0 14px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .hero-subtitle {
+    font-size: 15px;
+    line-height: 1.7;
+    color: #dbd2c6;
+    max-width: 760px;
+  }
+
+  .hero-meta {
+    display: grid;
+    gap: 10px;
+    justify-items: end;
+  }
+
+  .meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 9px 12px;
+    font-size: 12px;
+    color: #f2eadf;
+  }
+
+  .content {
+    padding: 28px;
+  }
+
+  .section {
+    margin-bottom: 24px;
+    break-inside: avoid;
+  }
+
+  .section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    margin-bottom: 14px;
+    font-weight: 800;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .metric {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(246,242,235,0.9) 100%);
+    min-height: 120px;
+  }
+
+  .metric-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+
+  .metric-value {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  .metric-value.green { color: var(--green); }
+  .metric-value.red { color: var(--red); }
+  .metric-value.gold { color: var(--gold); }
+  .metric-value.blue { color: var(--blue); }
+
+  .metric-sub {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .memo-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+    gap: 16px;
+  }
+
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 20px 22px;
+    background: var(--paper);
+  }
+
+  .memo-card p {
+    margin: 0 0 14px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #302923;
+  }
+
+  .memo-card p:last-child { margin-bottom: 0; }
+
+  .highlight-list {
+    margin: 0;
+    padding-left: 18px;
+  }
+
+  .highlight-list li {
+    margin: 0 0 10px;
+    font-size: 14px;
+    line-height: 1.65;
+    color: #302923;
+  }
+
+  .charts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .chart-card {
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 18px 18px 8px;
+    background: #fffdfa;
+    min-height: 330px;
+  }
+
+  .chart-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+
+  .chart-card canvas {
+    width: 100%;
+    max-height: 260px;
+  }
+
+  .map-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+    gap: 16px;
+  }
+
+  .map-card {
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    padding: 18px;
+    background: #fffdfa;
+  }
+
+  #tour-map {
+    width: 100%;
+    height: 480px;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    background: #f7f2ea;
+    border: 1px solid var(--line);
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .dot.completed { background: var(--gold); }
+  .dot.ladies { background: #cf668d; }
+  .dot.mens { background: var(--blue); }
+
+  .stop-list {
+    display: grid;
+    gap: 10px;
+    max-height: 480px;
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  .stop-item {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 12px 14px;
+    background: #fff;
+  }
+
+  .stop-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 5px;
+  }
+
+  .stop-meta {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .tag-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .tag.gold { background: var(--gold-soft); color: #7b570e; }
+  .tag.green { background: var(--green-soft); color: var(--green); }
+  .tag.blue { background: var(--blue-soft); color: var(--blue); }
+  .tag.red { background: var(--red-soft); color: var(--red); }
+
+  .footnote {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+
+  .loading,
+  .error {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 15px;
+  }
+
+  .error { color: var(--red); }
+
+  @media (max-width: 980px) {
+    .metrics,
+    .charts,
+    .memo-grid,
+    .map-grid,
+    .hero-row {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-meta {
+      justify-items: start;
+    }
+
+    .page,
+    .content {
+      padding: 18px;
+    }
+
+    .hero {
+      padding: 24px 22px;
+    }
+  }
+
+  @media print {
+    @page {
+      size: letter;
+      margin: 0.5in;
+    }
+
+    body {
+      background: #fff;
+    }
+
+    .page {
+      max-width: none;
+      padding: 0;
+    }
+
+    .toolbar {
+      display: none;
+    }
+
+    .sheet {
+      box-shadow: none;
+      border: none;
+      border-radius: 0;
+    }
+
+    .hero {
+      background: #2a241d;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .metric,
+    .card,
+    .chart-card,
+    .map-card,
+    .stop-item,
+    .tag,
+    .legend-item {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .section,
+    .chart-card,
+    .map-card,
+    .stop-item,
+    .memo-card,
+    .highlights-card {
+      break-inside: avoid;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="toolbar">
+    <div class="toolbar-note">Board-facing report generated from the live tour dashboard feed.</div>
+    <div class="toolbar-actions">
+      <button class="btn" onclick="loadReport()">Refresh Data</button>
+      <button class="btn" onclick="window.print()">Print / Save PDF</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="report-root">
+    <div class="loading">Loading board report...</div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwWf-ONXMIPyuBm4IP0YQJy7Ea4w0sUIo4kvYaaei407FxBMPlUgPrwLtirI2aoL4fk/exec';
+const MAP_CACHE_KEY = 'pbc-tour-board-geocode-cache-v1';
+const CATEGORY_COLORS = {
+  'Food & Meals': '#b98012',
+  'Transportation / Fuel': '#315f9a',
+  'Lodging': '#1f7a4e',
+  'Activities': '#8c63c7',
+  'Stipend': '#d17c1b',
+  'Other': '#6c655c',
+  '': '#9a938a'
+};
+
+let boardData = null;
+let chartOverview = null;
+let chartExpenses = null;
+let chartWeekly = null;
+let chartTeams = null;
+let map = null;
+let markerLayer = null;
+
+function loadReport() {
+  const root = document.getElementById('report-root');
+  root.innerHTML = '<div class="loading">Loading board report...</div>';
+  fetch(SCRIPT_URL)
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      boardData = data;
+      renderReport(data);
+      renderMap(data);
+    })
+    .catch(function(err) {
+      root.innerHTML = '<div class="error">Unable to load report data: ' + escapeHtml(err.message) + '</div>';
+    });
+}
+
+function renderReport(data) {
+  const summary = buildSummary(data);
+  const root = document.getElementById('report-root');
+  cleanupVisuals();
+  root.innerHTML = buildMarkup(summary);
+  renderCharts(summary);
+}
+
+function buildSummary(data) {
+  const expenses = data.expenses || [];
+  const income = data.income || [];
+  const evaluations = data.evaluations || [];
+  const contacts = data.infocards || [];
+  const schedule = data.schedule || [];
+  const now = new Date();
+
+  const totalExpenses = sumBy(expenses, 'Amount ($)');
+  const totalIncome = sumBy(income, 'Amount ($)');
+  const net = totalIncome - totalExpenses;
+
+  const uniqueChurches = uniqueValues(evaluations.map(function(row) {
+    return displayChurch(row);
+  })).filter(Boolean);
+
+  const interestCounts = contacts.reduce(function(acc, row) {
+    const interests = normalizeText(row['Interests']).toLowerCase();
+    if (interests.indexOf('visiting') > -1) acc.visiting += 1;
+    if (interests.indexOf('applying') > -1) acc.applying += 1;
+    if (interests.indexOf('visiting') > -1 && interests.indexOf('applying') > -1) acc.both += 1;
+    if (!interests) acc.blank += 1;
+    return acc;
+  }, { visiting: 0, applying: 0, both: 0, blank: 0 });
+
+  const expenseByCategory = rollup(expenses, 'Category', 'Amount ($)');
+  const incomeByCategory = rollup(income, 'Income Category', 'Amount ($)');
+  const expenseByTeam = rollup(expenses, 'Tour Group', 'Amount ($)');
+  const incomeByTeam = rollup(income, 'Tour Group', 'Amount ($)');
+  const evalByTeam = countRollup(evaluations, 'Tour Group');
+  const contactsByTeam = countRollup(contacts, 'Tour Group');
+
+  const visitScores = evaluations.reduce(function(acc, row) {
+    const soulWinning = parseMoney(row['Soul-Winning Rating (1-5)']);
+    const recommend = parseMoney(row['Recommend Returning (0-5)']);
+    if (soulWinning) {
+      acc.soulWinningTotal += soulWinning;
+      acc.soulWinningCount += 1;
+    }
+    if (recommend) {
+      acc.recommendTotal += recommend;
+      acc.recommendCount += 1;
+    }
+    if (normalizeText(row['PBC Connections']).toLowerCase() === 'yes') acc.connections += 1;
+    return acc;
+  }, { soulWinningTotal: 0, soulWinningCount: 0, recommendTotal: 0, recommendCount: 0, connections: 0 });
+
+  const spentShare = totalExpenses ? ((expenseByCategory['Food & Meals'] || 0) + (expenseByCategory['Transportation / Fuel'] || 0)) / totalExpenses : 0;
+  const dateCoverage = {
+    expenses: rangeLabel(expenses, 'Expense Date'),
+    income: rangeLabel(income, 'Income Date'),
+    evaluations: rangeLabel(evaluations, 'Visit Date'),
+    contacts: rangeLabel(contacts, 'Timestamp'),
+    schedule: rangeLabel(schedule, 'Date')
+  };
+
+  const weeklyExpenseData = groupExpensesByWeek(expenses);
+
+  return {
+    generatedAt: now,
+    totalExpenses: totalExpenses,
+    totalIncome: totalIncome,
+    net: net,
+    evaluationsCount: evaluations.length,
+    churchesCount: uniqueChurches.length,
+    contactsCount: contacts.length,
+    interestCounts: interestCounts,
+    expenseByCategory: expenseByCategory,
+    incomeByCategory: incomeByCategory,
+    expenseByTeam: expenseByTeam,
+    incomeByTeam: incomeByTeam,
+    evalByTeam: evalByTeam,
+    contactsByTeam: contactsByTeam,
+    avgSoulWinning: visitScores.soulWinningCount ? visitScores.soulWinningTotal / visitScores.soulWinningCount : 0,
+    avgRecommend: visitScores.recommendCount ? visitScores.recommendTotal / visitScores.recommendCount : 0,
+    pbcConnections: visitScores.connections,
+    noInterestCount: contacts.length - (interestCounts.visiting + interestCounts.applying - interestCounts.both),
+    spentShare: spentShare,
+    dateCoverage: dateCoverage,
+    weeklyExpenseData: weeklyExpenseData,
+    topExpenseCategory: topKey(expenseByCategory),
+    topIncomeCategory: topKey(incomeByCategory),
+    futureStopsCount: countFutureStops(schedule),
+    raw: data
+  };
+}
+
+function buildMarkup(summary) {
+  const heroSummary = 'This report summarizes ministry activity, recruitment progress, financial performance, and completed tour stops using the same live data that powers the operational dashboard.';
+  const highlights = buildHighlights(summary);
+  const memoParagraphs = buildMemoParagraphs(summary);
+
+  return '' +
+    '<div class="hero">' +
+      '<div class="eyebrow">Providence Baptist College</div>' +
+      '<div class="hero-row">' +
+        '<div>' +
+          '<h1>Summer Tour Executive Report</h1>' +
+          '<div class="hero-subtitle">' + heroSummary + '</div>' +
+        '</div>' +
+        '<div class="hero-meta">' +
+          '<div class="meta-pill"><strong>As of</strong> ' + escapeHtml(formatLongDate(summary.generatedAt)) + '</div>' +
+          '<div class="meta-pill"><strong>Coverage</strong> ' + escapeHtml(summary.dateCoverage.schedule) + '</div>' +
+          '<div class="meta-pill"><strong>Future Stops Scheduled</strong> ' + summary.futureStopsCount + '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="content">' +
+      '<div class="section">' +
+        '<div class="section-title">Executive Snapshot</div>' +
+        '<div class="metrics">' +
+          metricCard('Total Income', money(summary.totalIncome), 'green', 'Recorded income to date') +
+          metricCard('Total Expenses', money(summary.totalExpenses), 'red', 'Recorded operating expenses to date') +
+          metricCard('Net Position', money(summary.net), summary.net >= 0 ? 'green' : 'red', summary.net >= 0 ? 'Positive balance to date' : 'Current recorded deficit') +
+          metricCard('Churches Visited', String(summary.churchesCount), 'blue', summary.evaluationsCount + ' evaluation submissions') +
+          metricCard('Student Contacts', String(summary.contactsCount), 'gold', summary.interestCounts.visiting + ' want to visit, ' + summary.interestCounts.applying + ' want to apply') +
+          metricCard('PBC Connections', String(summary.pbcConnections), 'blue', 'Churches reporting an existing PBC connection') +
+        '</div>' +
+      '</div>' +
+
+      '<div class="section">' +
+        '<div class="section-title">Memorandum Summary</div>' +
+        '<div class="memo-grid">' +
+          '<div class="card memo-card">' + memoParagraphs.map(function(p) { return '<p>' + escapeHtml(p) + '</p>'; }).join('') + '</div>' +
+          '<div class="card highlights-card">' +
+            '<div class="chart-title">Board Highlights</div>' +
+            '<ul class="highlight-list">' + highlights.map(function(item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ul>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="section">' +
+        '<div class="section-title">Financial Visuals</div>' +
+        '<div class="charts">' +
+          '<div class="chart-card"><div class="chart-title">Income, Expenses, and Net Position</div><canvas id="chart-overview"></canvas></div>' +
+          '<div class="chart-card"><div class="chart-title">Expenses by Category</div><canvas id="chart-expenses"></canvas></div>' +
+          '<div class="chart-card"><div class="chart-title">Weekly Expense Trend</div><canvas id="chart-weekly"></canvas></div>' +
+          '<div class="chart-card"><div class="chart-title">Men\'s vs. Ladies\' Team Totals</div><canvas id="chart-teams"></canvas></div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="section">' +
+        '<div class="section-title">Tour Stops</div>' +
+        '<div class="map-grid">' +
+          '<div class="map-card">' +
+            '<div class="chart-title">Visited Churches Map</div>' +
+            '<div id="tour-map"></div>' +
+            '<div class="legend">' +
+              '<div class="legend-item"><span class="dot completed"></span> Evaluated / completed stop</div>' +
+              '<div class="legend-item"><span class="dot ladies"></span> Ladies team visit</div>' +
+              '<div class="legend-item"><span class="dot mens"></span> Men\'s team visit</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="map-card">' +
+            '<div class="chart-title">Visited Churches List</div>' +
+            '<div class="stop-list" id="stop-list"><div class="loading" style="padding:20px 0">Loading stops...</div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="footnote" style="margin-top:12px">The map plots completed stops using submitted church evaluations. Geocoding is cached in the browser for faster subsequent loads. If a location cannot be plotted automatically, it will still appear in the stop list.</div>' +
+      '</div>' +
+    '</div>';
+}
+
+function buildHighlights(summary) {
+  return [
+    summary.net >= 0 ? 'Recorded income currently exceeds expenses.' : 'Recorded expenses currently exceed income by ' + money(Math.abs(summary.net)) + '.',
+    'The tour has visited ' + summary.churchesCount + ' distinct churches and logged ' + summary.evaluationsCount + ' evaluation submissions.',
+    'Student recruitment activity totals ' + summary.contactsCount + ' contacts, including ' + summary.interestCounts.visiting + ' prospective campus visits and ' + summary.interestCounts.applying + ' prospective applicants.',
+    capitalizeTeamName(topKey(summary.expenseByTeam)) + ' has the larger recorded expense total to date.',
+    'The largest expense category is ' + (summary.topExpenseCategory || 'Uncategorized') + ', and the top two travel categories represent ' + Math.round(summary.spentShare * 100) + '% of recorded expenses.',
+    'Average church feedback remains strong at ' + summary.avgSoulWinning.toFixed(2) + '/5 for soul-winning effectiveness and ' + summary.avgRecommend.toFixed(2) + '/5 for return recommendation.',
+    summary.noInterestCount > 0 ? summary.noInterestCount + ' contacts do not yet show a visit/apply flag, leaving additional follow-up opportunity.' : 'Most contacts already include a stated recruitment interest.'
+  ];
+}
+
+function buildMemoParagraphs(summary) {
+  const netSentence = summary.net >= 0
+    ? 'Financially, the tour has recorded ' + money(summary.totalIncome) + ' in income against ' + money(summary.totalExpenses) + ' in expenses, leaving a positive net position of ' + money(summary.net) + '.'
+    : 'Financially, the tour has recorded ' + money(summary.totalIncome) + ' in income against ' + money(summary.totalExpenses) + ' in expenses, leaving a current recorded deficit of ' + money(Math.abs(summary.net)) + '.';
+
+  return [
+    'The summer tour continues to show solid forward momentum in ministry reach, church engagement, and student recruitment. To date, the teams have submitted ' + summary.evaluationsCount + ' church evaluations representing ' + summary.churchesCount + ' distinct churches visited.',
+    'Church response has been encouraging overall. Evaluation scores currently average ' + summary.avgSoulWinning.toFixed(2) + ' out of 5 for soul-winning effectiveness and ' + summary.avgRecommend.toFixed(2) + ' out of 5 for return recommendation, while ' + summary.pbcConnections + ' churches have reported an existing PBC connection.',
+    'Recruitment activity remains meaningful. The tour has generated ' + summary.contactsCount + ' student contacts, including ' + summary.interestCounts.visiting + ' who expressed interest in visiting campus and ' + summary.interestCounts.applying + ' who expressed interest in applying.',
+    netSentence + ' The primary expense drivers have been ' + summary.topExpenseCategory + ' and Transportation / Fuel, reflecting the normal operating costs of an active summer travel schedule.',
+    'Overall, the data suggests the tour is fulfilling its intended role of strengthening church relationships, representing Providence Baptist College well, and creating measurable recruitment opportunities for continued follow-up.'
+  ];
+}
+
+function metricCard(label, value, colorClass, subtext) {
+  return '<div class="metric"><div class="metric-label">' + escapeHtml(label) + '</div><div class="metric-value ' + colorClass + '">' + escapeHtml(value) + '</div><div class="metric-sub">' + escapeHtml(subtext) + '</div></div>';
+}
+
+function renderCharts(summary) {
+  const baseOptions = {
+    maintainAspectRatio: false,
+    animation: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: '#5c554b',
+          font: { family: 'Inter', size: 11 }
+        }
+      }
+    }
+  };
+
+  if (chartOverview) chartOverview.destroy();
+  if (chartExpenses) chartExpenses.destroy();
+  if (chartWeekly) chartWeekly.destroy();
+  if (chartTeams) chartTeams.destroy();
+
+  chartOverview = new Chart(document.getElementById('chart-overview'), {
+    type: 'bar',
+    data: {
+      labels: ['Income', 'Expenses', 'Net'],
+      datasets: [{
+        data: [summary.totalIncome, summary.totalExpenses, summary.net],
+        backgroundColor: ['#1f7a4e', '#b24545', summary.net >= 0 ? '#315f9a' : '#b98012'],
+        borderRadius: 8
+      }]
+    },
+    options: Object.assign({}, baseOptions, {
+      plugins: { legend: { display: false } },
+      scales: buildMoneyScales()
+    })
+  });
+
+  const expenseKeys = Object.keys(summary.expenseByCategory).sort(function(a, b) {
+    return summary.expenseByCategory[b] - summary.expenseByCategory[a];
+  });
+  chartExpenses = new Chart(document.getElementById('chart-expenses'), {
+    type: 'doughnut',
+    data: {
+      labels: expenseKeys,
+      datasets: [{
+        data: expenseKeys.map(function(key) { return summary.expenseByCategory[key]; }),
+        backgroundColor: expenseKeys.map(function(key) { return CATEGORY_COLORS[key] || '#9a938a'; }),
+        borderWidth: 0
+      }]
+    },
+    options: Object.assign({}, baseOptions, {
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#5c554b', font: { family: 'Inter', size: 11 }, boxWidth: 12, padding: 10 }
+        }
+      }
+    })
+  });
+
+  chartWeekly = new Chart(document.getElementById('chart-weekly'), {
+    type: 'bar',
+    data: {
+      labels: summary.weeklyExpenseData.labels,
+      datasets: [{
+        label: 'Weekly Expenses',
+        data: summary.weeklyExpenseData.values,
+        backgroundColor: '#315f9acc',
+        borderColor: '#315f9a',
+        borderWidth: 1,
+        borderRadius: 6
+      }]
+    },
+    options: Object.assign({}, baseOptions, {
+      scales: buildMoneyScales()
+    })
+  });
+
+  chartTeams = new Chart(document.getElementById('chart-teams'), {
+    type: 'bar',
+    data: {
+      labels: ['Ladies', 'Men\'s'],
+      datasets: [
+        {
+          label: 'Income',
+          data: [summary.incomeByTeam.ladies || 0, summary.incomeByTeam.mens || 0],
+          backgroundColor: '#1f7a4e',
+          borderRadius: 6
+        },
+        {
+          label: 'Expenses',
+          data: [summary.expenseByTeam.ladies || 0, summary.expenseByTeam.mens || 0],
+          backgroundColor: '#b24545',
+          borderRadius: 6
+        },
+        {
+          label: 'Contacts',
+          data: [summary.contactsByTeam.ladies || 0, summary.contactsByTeam.mens || 0],
+          backgroundColor: '#315f9a',
+          borderRadius: 6,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: Object.assign({}, baseOptions, {
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { color: '#5c554b', callback: function(value) { return '$' + value; } },
+          grid: { color: 'rgba(115,96,69,0.12)' }
+        },
+        y1: {
+          beginAtZero: true,
+          position: 'right',
+          ticks: { color: '#5c554b' },
+          grid: { drawOnChartArea: false }
+        },
+        x: {
+          ticks: { color: '#5c554b' },
+          grid: { display: false }
+        }
+      }
+    })
+  });
+}
+
+function cleanupVisuals() {
+  if (chartOverview) { chartOverview.destroy(); chartOverview = null; }
+  if (chartExpenses) { chartExpenses.destroy(); chartExpenses = null; }
+  if (chartWeekly) { chartWeekly.destroy(); chartWeekly = null; }
+  if (chartTeams) { chartTeams.destroy(); chartTeams = null; }
+  if (map) {
+    map.remove();
+    map = null;
+    markerLayer = null;
+  }
+}
+
+function buildMoneyScales() {
+  return {
+    x: {
+      ticks: { color: '#5c554b' },
+      grid: { display: false }
+    },
+    y: {
+      beginAtZero: true,
+      ticks: {
+        color: '#5c554b',
+        callback: function(value) { return '$' + value; }
+      },
+      grid: { color: 'rgba(115,96,69,0.12)' }
+    }
+  };
+}
+
+async function renderMap(data) {
+  const stopList = document.getElementById('stop-list');
+  if (!stopList) return;
+
+  const stops = extractStops(data.evaluations || []);
+  stopList.innerHTML = stops.map(function(stop) { return stopMarkup(stop); }).join('');
+
+  if (!document.getElementById('tour-map')) return;
+  if (!map) {
+    map = L.map('tour-map', { scrollWheelZoom: false });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+  }
+  if (markerLayer) markerLayer.clearLayers();
+  markerLayer = L.layerGroup().addTo(map);
+
+  const geocoded = await geocodeStops(stops);
+  const bounds = [];
+  geocoded.forEach(function(stop) {
+    if (!stop.coords) return;
+    const color = stop.teams.ladies && stop.teams.mens ? '#b98012' : (stop.teams.ladies ? '#cf668d' : '#315f9a');
+    const marker = L.circleMarker(stop.coords, {
+      radius: 8,
+      weight: 2,
+      color: '#fffdfa',
+      fillColor: color,
+      fillOpacity: 0.95
+    });
+    marker.bindPopup(buildStopPopup(stop));
+    marker.addTo(markerLayer);
+    bounds.push(stop.coords);
+  });
+
+  if (bounds.length) {
+    map.fitBounds(bounds, { padding: [24, 24] });
+  } else {
+    map.setView([39.5, -98.35], 4);
+  }
+}
+
+function extractStops(evaluations) {
+  const mapByChurch = {};
+  evaluations.forEach(function(row) {
+    const label = displayChurch(row);
+    if (!label) return;
+    if (!mapByChurch[label]) {
+      mapByChurch[label] = {
+        label: label,
+        churchName: normalizeText(row['Church Name']),
+        churchCity: normalizeText(row['Church City']),
+        churchState: normalizeText(row['Church State']),
+        pastor: normalizeText(row['Pastor Name']),
+        latestVisit: normalizeDate(row['Visit Date']),
+        teams: { ladies: false, mens: false },
+        count: 0,
+        pbcConnection: false,
+        cityQuery: buildLocationQuery(row),
+        fallbackQuery: buildFallbackLocationQuery(row)
+      };
+    }
+    const stop = mapByChurch[label];
+    stop.count += 1;
+    stop.pbcConnection = stop.pbcConnection || normalizeText(row['PBC Connections']).toLowerCase() === 'yes';
+    const group = normalizeText(row['Tour Group']).toLowerCase();
+    if (group === 'ladies') stop.teams.ladies = true;
+    if (group === 'mens') stop.teams.mens = true;
+    const visitDate = normalizeDate(row['Visit Date']);
+    if (visitDate && (!stop.latestVisit || visitDate > stop.latestVisit)) stop.latestVisit = visitDate;
+  });
+
+  return Object.keys(mapByChurch).map(function(key) { return mapByChurch[key]; }).sort(function(a, b) {
+    return (b.latestVisit || '').localeCompare(a.latestVisit || '');
+  });
+}
+
+function stopMarkup(stop) {
+  const tags = [];
+  if (stop.teams.ladies) tags.push('<span class="tag red">Ladies</span>');
+  if (stop.teams.mens) tags.push('<span class="tag blue">Men\'s</span>');
+  if (stop.pbcConnection) tags.push('<span class="tag green">PBC connection</span>');
+  if (stop.count > 1) tags.push('<span class="tag gold">' + stop.count + ' visits logged</span>');
+  return '' +
+    '<div class="stop-item">' +
+      '<div class="stop-name">' + escapeHtml(stop.label) + '</div>' +
+      '<div class="stop-meta">' +
+        'Latest visit: ' + escapeHtml(formatDateValue(stop.latestVisit)) + '<br>' +
+        'Pastor: ' + escapeHtml(stop.pastor || '-') +
+      '</div>' +
+      '<div class="tag-row">' + tags.join('') + '</div>' +
+    '</div>';
+}
+
+function buildStopPopup(stop) {
+  return '' +
+    '<div style="font-family:Inter,sans-serif;line-height:1.5;min-width:220px">' +
+      '<div style="font-weight:700;margin-bottom:6px">' + escapeHtml(stop.label) + '</div>' +
+      '<div style="font-size:12px;color:#5c554b">Latest visit: ' + escapeHtml(formatDateValue(stop.latestVisit)) + '</div>' +
+      '<div style="font-size:12px;color:#5c554b">Pastor: ' + escapeHtml(stop.pastor || '-') + '</div>' +
+      '<div style="font-size:12px;color:#5c554b">Teams: ' + escapeHtml(teamLabel(stop.teams)) + '</div>' +
+    '</div>';
+}
+
+async function geocodeStops(stops) {
+  const cache = readGeocodeCache();
+  const unresolved = [];
+
+  for (let i = 0; i < stops.length; i += 1) {
+    const stop = stops[i];
+    const primaryQuery = stop.cityQuery;
+    const fallbackQuery = stop.fallbackQuery;
+    const cacheKey = primaryQuery || fallbackQuery;
+    if (!cacheKey) {
+      stop.coords = null;
+      unresolved.push(stop.label);
+      continue;
+    }
+    if (cache[cacheKey]) {
+      stop.coords = cache[cacheKey];
+      continue;
+    }
+    try {
+      let rows = await requestGeocode(primaryQuery);
+      if ((!rows || !rows.length) && fallbackQuery && fallbackQuery !== primaryQuery) {
+        rows = await requestGeocode(fallbackQuery);
+      }
+      if (rows && rows.length) {
+        stop.coords = [parseFloat(rows[0].lat), parseFloat(rows[0].lon)];
+        cache[cacheKey] = stop.coords;
+        writeGeocodeCache(cache);
+      } else {
+        stop.coords = null;
+        unresolved.push(stop.label);
+      }
+    } catch (err) {
+      stop.coords = null;
+      unresolved.push(stop.label);
+    }
+    await wait(300);
+  }
+
+  const stopList = document.getElementById('stop-list');
+  if (stopList && unresolved.length) {
+    stopList.insertAdjacentHTML('afterbegin', '<div class="footnote" style="margin-bottom:10px">Some locations could not be mapped automatically: ' + escapeHtml(unresolved.slice(0, 5).join(', ')) + (unresolved.length > 5 ? ' and ' + (unresolved.length - 5) + ' more.' : '.') + '</div>');
+  }
+  return stops;
+}
+
+function readGeocodeCache() {
+  try {
+    return JSON.parse(localStorage.getItem(MAP_CACHE_KEY) || '{}');
+  } catch (err) {
+    return {};
+  }
+}
+
+function writeGeocodeCache(cache) {
+  try {
+    localStorage.setItem(MAP_CACHE_KEY, JSON.stringify(cache));
+  } catch (err) {
+    return;
+  }
+}
+
+function buildLocationQuery(row) {
+  const city = normalizeText(row['Church City']);
+  const state = normalizeText(row['Church State']).toUpperCase();
+  if (city && state) return city + ', ' + state + ', USA';
+  const fallback = displayChurch(row).replace(/\s*\/\s*/g, ', ').replace(/\s{2,}/g, ' ');
+  return fallback ? fallback + ', USA' : '';
+}
+
+function buildFallbackLocationQuery(row) {
+  const cleaned = displayChurch(row).replace(/\s*\/\s*/g, ', ');
+  const parts = cleaned.split(',').map(function(part) { return part.trim(); }).filter(Boolean);
+  if (parts.length >= 2) {
+    return parts.slice(-2).join(', ') + ', USA';
+  }
+  return cleaned ? cleaned + ', USA' : '';
+}
+
+function displayChurch(row) {
+  const name = normalizeText(row['Church Name']);
+  const city = normalizeText(row['Church City']);
+  const state = normalizeText(row['Church State']).toUpperCase();
+  if (name && city && state) return [name, city, state].join(', ');
+  return normalizeText(row['Church Name / City / State']);
+}
+
+function requestGeocode(query) {
+  if (!query) return Promise.resolve([]);
+  return fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=' + encodeURIComponent(query), {
+    headers: { 'Accept': 'application/json' }
+  }).then(function(response) {
+    return response.json();
+  });
+}
+
+function countFutureStops(schedule) {
+  const todayKey = dateKey(new Date());
+  return schedule.filter(function(row) {
+    return dateKey(row['Date']) >= todayKey;
+  }).length;
+}
+
+function groupExpensesByWeek(rows) {
+  const byWeek = {};
+  rows.forEach(function(row) {
+    const day = parseDate(row['Expense Date']);
+    if (!day) return;
+    const week = mondayLabel(day);
+    byWeek[week] = (byWeek[week] || 0) + parseMoney(row['Amount ($)']);
+  });
+  const labels = Object.keys(byWeek).sort(function(a, b) {
+    return new Date(a + ', 2026') - new Date(b + ', 2026');
+  });
+  return {
+    labels: labels.map(function(label) { return 'Wk of ' + label; }),
+    values: labels.map(function(label) { return round2(byWeek[label]); })
+  };
+}
+
+function mondayLabel(date) {
+  const copy = new Date(date.getTime());
+  const day = copy.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  copy.setDate(copy.getDate() + diff);
+  return copy.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function rollup(rows, key, amountKey) {
+  return rows.reduce(function(acc, row) {
+    const label = normalizeText(row[key]) || 'Other';
+    acc[label] = (acc[label] || 0) + parseMoney(row[amountKey]);
+    return acc;
+  }, {});
+}
+
+function countRollup(rows, key) {
+  return rows.reduce(function(acc, row) {
+    const label = normalizeText(row[key]).toLowerCase() || 'other';
+    acc[label] = (acc[label] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function uniqueValues(values) {
+  return Array.from(new Set(values));
+}
+
+function sumBy(rows, key) {
+  return round2(rows.reduce(function(sum, row) {
+    return sum + parseMoney(row[key]);
+  }, 0));
+}
+
+function rangeLabel(rows, key) {
+  const dates = rows.map(function(row) { return parseDate(row[key]); }).filter(Boolean).sort(function(a, b) { return a - b; });
+  if (!dates.length) return 'No dates available';
+  return formatShortDate(dates[0]) + ' to ' + formatShortDate(dates[dates.length - 1]);
+}
+
+function topKey(obj) {
+  return Object.keys(obj).sort(function(a, b) { return obj[b] - obj[a]; })[0] || '';
+}
+
+function teamLabel(teams) {
+  if (teams.ladies && teams.mens) return 'Ladies and Men\'s';
+  if (teams.ladies) return 'Ladies';
+  if (teams.mens) return 'Men\'s';
+  return 'Unspecified';
+}
+
+function capitalizeTeamName(key) {
+  if (key === 'ladies') return 'Ladies';
+  if (key === 'mens') return 'Men\'s';
+  return key ? key.charAt(0).toUpperCase() + key.slice(1) : 'One team';
+}
+
+function parseMoney(value) {
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+function parseDate(value) {
+  if (!value) return null;
+  const text = String(value).trim();
+  if (!text) return null;
+  const date = text.indexOf('T') > -1 || /^\d{4}-\d{2}-\d{2}/.test(text) ? new Date(text) : new Date(text + ', 2026');
+  return isNaN(date) ? null : date;
+}
+
+function normalizeDate(value) {
+  const date = parseDate(value);
+  return date ? dateKey(date) : '';
+}
+
+function dateKey(value) {
+  const date = value instanceof Date ? value : parseDate(value);
+  if (!date) return '';
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return date.getFullYear() + '-' + month + '-' + day;
+}
+
+function formatDateValue(value) {
+  const date = parseDate(value);
+  return date ? formatShortDate(date) : '-';
+}
+
+function formatShortDate(date) {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatLongDate(date) {
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function normalizeText(value) {
+  return String(value || '').trim();
+}
+
+function round2(value) {
+  return Math.round(value * 100) / 100;
+}
+
+function money(value) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(value || 0);
+}
+
+function wait(ms) {
+  return new Promise(function(resolve) { setTimeout(resolve, ms); });
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+loadReport();
+</script>
+</body>
+</html>

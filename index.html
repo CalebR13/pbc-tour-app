@@ -190,6 +190,18 @@ window.addEventListener('load', function() {
 
   /* Notice */
   .notice { background: var(--gold-light); border: 1.5px solid var(--gold); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--gold-dark); margin-bottom: 18px; font-weight: 500; }
+  .pick-list { display: grid; gap: 8px; }
+  .pick-item { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; cursor: pointer; transition: all 0.15s; }
+  .pick-item:hover { border-color: var(--gold); }
+  .pick-item.active { border-color: var(--dark); background: var(--dark); color: #fff; }
+  .pick-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .pick-title { font-size: 14px; font-weight: 600; }
+  .pick-meta { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .pick-item.active .pick-meta { color: rgba(255,255,255,0.7); }
+  .pick-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 3px 8px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+  .pick-badge.upcoming { background: var(--gold-light); color: var(--gold-dark); }
+  .pick-badge.pastdue { background: #f0e8e8; color: #8a2a22; }
+  .pick-empty { background: var(--surface); border: 1.5px dashed var(--border); border-radius: var(--radius-sm); padding: 14px; font-size: 13px; color: var(--muted); }
 
   /* Misc */
   .divider { height: 1px; background: var(--border); margin: 22px 0; }
@@ -320,8 +332,17 @@ window.addEventListener('load', function() {
     <h2 class="screen-title">Church Visit Details</h2>
     <p class="screen-subtitle">Fill in what you observed during this visit.</p>
 
+    <div class="field-group">
+      <label class="field-label">Choose Scheduled Church</label>
+      <div class="pick-list" id="eval-picks"><div class="pick-empty">Loading scheduled churches...</div></div>
+    </div>
+
     <div class="field-group"><label class="field-label">Date of Visit <span class="req">*</span></label><input type="date" id="e-date"></div>
-    <div class="field-group"><label class="field-label">Church Name, City, State <span class="req">*</span></label><input type="text" placeholder="e.g. Grace Baptist Church, Springfield, IL" id="e-church"></div>
+    <div class="row-3">
+      <div class="field-group"><label class="field-label">Church Name <span class="req">*</span></label><input type="text" placeholder="Grace Baptist Church" id="e-church-name" oninput="syncEvalIncomeChurch()"></div>
+      <div class="field-group"><label class="field-label">Church City <span class="req">*</span></label><input type="text" placeholder="Springfield" id="e-church-city" oninput="syncEvalIncomeChurch()"></div>
+      <div class="field-group"><label class="field-label">Church State <span class="req">*</span></label><input type="text" placeholder="IL" maxlength="2" id="e-church-state" oninput="syncEvalIncomeChurch()"></div>
+    </div>
     <div class="field-group"><label class="field-label">Pastor Name <span class="req">*</span></label><input type="text" placeholder="Full name" id="e-pastor"></div>
 
     <div class="field-group">
@@ -385,7 +406,11 @@ window.addEventListener('load', function() {
           <button class="income-addon-btn yes" id="inc-yes-btn" onclick="toggleIncomeAddon('yes')">Yes — add income</button>
         </div>
         <div class="income-section" id="eval-income-section">
-          <div class="field-group"><label class="field-label">Church receiving income from</label><input type="text" id="ei-church" placeholder="Auto-filled from above" style="opacity:0.7"></div>
+          <div class="row-3">
+            <div class="field-group"><label class="field-label">Church Name</label><input type="text" id="ei-church-name" placeholder="Auto-filled from above"></div>
+            <div class="field-group"><label class="field-label">Church City</label><input type="text" id="ei-church-city" placeholder="Auto-filled from above"></div>
+            <div class="field-group"><label class="field-label">Church State</label><input type="text" id="ei-church-state" placeholder="IL" maxlength="2"></div>
+          </div>
           <div class="field-group"><label class="field-label">Income Date</label><input type="date" id="ei-date"></div>
           <div class="section-label" style="margin-top:4px">Income Entries</div>
           <div id="ei-entries"></div>
@@ -458,7 +483,11 @@ window.addEventListener('load', function() {
     <div class="workflow-badge badge-amber">📥 Income</div>
     <h2 class="screen-title">Income Record</h2>
     <p class="screen-subtitle">Log one or more income entries for this church.</p>
-    <div class="field-group"><label class="field-label">Church Name, City, State <span class="req">*</span></label><input type="text" placeholder="e.g. Grace Baptist Church, Springfield, IL" id="i-church"></div>
+    <div class="row-3">
+      <div class="field-group"><label class="field-label">Church Name <span class="req">*</span></label><input type="text" placeholder="Grace Baptist Church" id="i-church-name"></div>
+      <div class="field-group"><label class="field-label">Church City <span class="req">*</span></label><input type="text" placeholder="Springfield" id="i-church-city"></div>
+      <div class="field-group"><label class="field-label">Church State <span class="req">*</span></label><input type="text" placeholder="IL" maxlength="2" id="i-church-state"></div>
+    </div>
     <div class="field-group"><label class="field-label">Income Date <span class="req">*</span></label><input type="date" id="i-date"></div>
     <div class="divider"></div>
     <div class="section-label">Income Entries</div>
@@ -502,7 +531,11 @@ window.addEventListener('load', function() {
       <div class="field-group"><label class="field-label">Zip <span class="req">*</span></label><input type="text" placeholder="60601" maxlength="5" id="c-zip"></div>
     </div>
 
-    <div class="field-group"><label class="field-label">Church Name, City, State <span class="req">*</span></label><input type="text" placeholder="e.g. Grace Baptist, Springfield, IL" id="c-church"></div>
+    <div class="row-3">
+      <div class="field-group"><label class="field-label">Church Name <span class="req">*</span></label><input type="text" placeholder="Grace Baptist Church" id="c-church-name"></div>
+      <div class="field-group"><label class="field-label">Church City <span class="req">*</span></label><input type="text" placeholder="Springfield" id="c-church-city"></div>
+      <div class="field-group"><label class="field-label">Church State <span class="req">*</span></label><input type="text" placeholder="IL" maxlength="2" id="c-church-state"></div>
+    </div>
     <div class="field-group"><label class="field-label">Pastor Name <span class="req">*</span></label><input type="text" placeholder="Pastor's full name" id="c-pastor"></div>
 
     <div class="divider"></div><div class="section-label">Interests</div>
@@ -622,6 +655,8 @@ window.addEventListener('load', function() {
 <script>
 let role=null, finType=null, formScreen=null, swRating=0, entryCount=0;
 let tourGroup = localStorage.getItem('pbcTourGroup') || 'mens';
+let evaluationPickerData = null;
+let selectedEvalPickKey = '';
 
 const MENS_NAMES = ['Putnam','Walker','Tan','McDonnell','Davadilla','Wilbar','Rardin'];
 const LADIES_NAMES = ['Bartels','Bessine','Bottrell','Chase','Miller','Palmer','Rardin'];
@@ -649,6 +684,7 @@ function setTourGroup(group) {
   if (pillMens) pillMens.classList.toggle('active', group === 'mens');
   if (pillLadies) pillLadies.classList.toggle('active', group === 'ladies');
   updateNameDropdown();
+  if (role === 'evaluation' && document.getElementById('sc-evaluation').classList.contains('active')) loadEvaluationPicker();
 }
 
 function updateNameDropdown() {
@@ -673,10 +709,29 @@ function toggleIncomeAddon(val) {
   const section = document.getElementById('eval-income-section');
   section.classList.toggle('show', val === 'yes');
   if (val === 'yes') {
-    // Auto-fill church name from eval form
-    document.getElementById('ei-church').value = v('e-church');
+    syncEvalIncomeChurch();
     if (evalIncomeCount === 0) addEvalIncomeEntry();
   }
+}
+
+function stateValue(id) {
+  const el = document.getElementById(id);
+  if (!el) return '';
+  return el.value.trim().toUpperCase();
+}
+
+function churchLine(prefix) {
+  return [v(prefix+'-church-name'), v(prefix+'-church-city'), stateValue(prefix+'-church-state')].filter(Boolean).join(', ');
+}
+
+function syncEvalIncomeChurch() {
+  var name = document.getElementById('ei-church-name');
+  var city = document.getElementById('ei-church-city');
+  var state = document.getElementById('ei-church-state');
+  if (!name || !city || !state) return;
+  name.value = v('e-church-name');
+  city.value = v('e-church-city');
+  state.value = stateValue('e-church-state');
 }
 
 function addEvalIncomeEntry() {
@@ -736,6 +791,7 @@ function startWorkflow(){
   if(!role)return; prog(2);
   formScreen = role==='finances'?'sc-finances': role==='evaluation'?'sc-evaluation': role==='socials'?'sc-socials': role==='schedule'?'sc-schedule':'sc-infocard';
   go('sc-role', formScreen);
+  if (role === 'evaluation') loadEvaluationPicker();
   if (role === 'schedule') loadSchedule();
 }
 function pickFinType(t,el){
@@ -805,7 +861,7 @@ function review(){
   let h='';
   const ss=n=>'★'.repeat(n)+'☆'.repeat(5-n);
   if(role==='evaluation'){
-    h+=row('Date',v('e-date'))+row('Destination Church',v('e-church'))+row('Pastor',v('e-pastor'))
+    h+=row('Date',v('e-date'))+row('Destination Church',churchLine('e'))+row('Pastor',v('e-pastor'))
       +row('Teenagers',rv['e-teens']||'—')
       +row('PBC connections',rv['e-pbc']==='Yes'?'Yes — '+v('e-pbc-det'):rv['e-pbc']||'—')
       +row('Other colleges',v('e-colleges'))
@@ -815,7 +871,7 @@ function review(){
       +row('Recommend',v('e-rec')||document.getElementById('e-rec').value);
     if(evalIncomeAddon==='yes'){
       h+='<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;font-weight:600;color:var(--gold);margin-bottom:6px">INCOME RECEIVED</div>';
-      h+=row('Destination Church',v('ei-church'))+row('Date',v('ei-date'));
+      h+=row('Destination Church',churchLine('ei'))+row('Date',v('ei-date'));
       document.querySelectorAll('[id^="eie-"]').forEach((e,i)=>{const n=e.id.replace('eie-','');const amt=v('eia-'+n),cat=v('eic-'+n),typ=v('eit-'+n);h+=row('Entry '+(i+1),[amt?'$'+parseFloat(amt).toFixed(2):'',cat,typ].filter(Boolean).join(' · '));});
     }
   } else if(finType==='expense'){
@@ -823,7 +879,7 @@ function review(){
     h+=row('Date',v('x-date'))+row('Amount',v('x-amt')?'$'+parseFloat(v('x-amt')).toFixed(2):'—')
       +row('Category',v('x-cat'))+row('Receipt',f&&f.files.length?f.files[0].name:'None');
   } else if(finType==='income'){
-    h+=row('Destination Church',v('i-church'))+row('Date',v('i-date'));
+    h+=row('Destination Church',churchLine('i'))+row('Date',v('i-date'));
     document.querySelectorAll('.income-entry').forEach((e,i)=>{
       const n=e.id.replace('ie-','');
       const amt=v('ia-'+n),cat=v('ic-'+n),typ=v('it-'+n);
@@ -835,7 +891,7 @@ function review(){
       +row('Date of birth',v('c-dob'))+row('HS grad year',v('c-grad'))
       +row('Email',v('c-email'))+row('Phone',v('c-phone'))
       +row('City/State/Zip',[v('c-city'),v('c-state'),v('c-zip')].filter(Boolean).join(', '))
-      +row('Destination Church',v('c-church'))+row('Pastor',v('c-pastor'))
+      +row('Destination Church',churchLine('c'))+row('Pastor',v('c-pastor'))
       +row('Interests',checked('c-interests').join(', ')||'—')
       +row('Majors',checked('c-majors').join(', ')||'—')
       +row('Form photo',f&&f.files.length?f.files.length+' file(s)':'None');
@@ -844,6 +900,251 @@ function review(){
   document.getElementById('err').style.display='none';
   updateNameDropdown();
   prog(3); go(formScreen,'sc-review');
+}
+
+function loadEvaluationPicker() {
+  const container = document.getElementById('eval-picks');
+  if (!container) return;
+  selectedEvalPickKey = '';
+  container.innerHTML = '<div class="pick-empty">Loading scheduled churches...</div>';
+  fetch(SCRIPT_URL)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      evaluationPickerData = buildEvaluationPickerData(data.schedule || [], data.evaluations || []);
+      renderEvaluationPicker();
+    })
+    .catch(function() {
+      container.innerHTML = '<div class="pick-empty">Could not load scheduled churches. You can still enter the church manually.</div>';
+    });
+}
+
+function buildEvaluationPickerData(scheduleRows, evaluationRows) {
+  const relevantSchedule = scheduleRows
+    .filter(function(row) { return normalizeGroup(row['Tour Group']) === tourGroup; })
+    .map(scheduleChurchStop)
+    .filter(Boolean);
+  const evaluatedChurchKeys = {};
+  evaluationRows.forEach(function(row) {
+    if (normalizeGroup(row['Tour Group']) !== tourGroup) return;
+    const parsedChurch = parseChurchFieldsFromRow(row);
+    const churchKey = stopChurchKey({
+      churchName: parsedChurch.name,
+      churchCity: parsedChurch.city,
+      churchState: parsedChurch.state
+    });
+    if (churchKey) evaluatedChurchKeys[churchKey] = true;
+  });
+  const pendingByChurch = {};
+  relevantSchedule.forEach(function(stop) {
+    const churchKey = stopChurchKey(stop);
+    if (!churchKey || evaluatedChurchKeys[churchKey]) return;
+    if (!pendingByChurch[churchKey]) {
+      pendingByChurch[churchKey] = Object.assign({}, stop, {
+        key: churchKey,
+        dates: [stop.date],
+        eventNames: stop.eventName ? [stop.eventName] : []
+      });
+      return;
+    }
+    const existing = pendingByChurch[churchKey];
+    existing.dates.push(stop.date);
+    if (stop.eventName && existing.eventNames.indexOf(stop.eventName) === -1) existing.eventNames.push(stop.eventName);
+    if (stop.date < existing.date) {
+      existing.date = stop.date;
+      existing.eventTime = stop.eventTime;
+      existing.pastor = existing.pastor || stop.pastor;
+    }
+  });
+  const pending = Object.keys(pendingByChurch).map(function(key) { return pendingByChurch[key]; });
+  const today = isoDateToday();
+  const upcoming = pending.filter(function(stop) { return stop.date >= today; }).sort(compareStops).slice(0, 3);
+  const pastDue = pending.filter(function(stop) { return stop.date < today; }).sort(compareStops);
+  return {
+    upcoming: upcoming,
+    pastDue: pastDue
+  };
+}
+
+function scheduleChurchStop(row) {
+  const destination = vFrom(row, 'Destination');
+  const cityState = vFrom(row, 'Destination City, State');
+  const eventName = vFrom(row, 'Event');
+  const needsEvaluation = vFrom(row, 'Needs Evaluation').toLowerCase();
+  if (needsEvaluation !== 'yes' || !destination || !cityState || !isEvaluatableEvent(eventName)) return null;
+  const parsed = parseCityState(cityState);
+  const stop = {
+    date: normalizeIsoDate(row['Date']),
+    churchName: destination,
+    churchCity: parsed.city,
+    churchState: parsed.state,
+    pastor: vFrom(row, 'Pastor'),
+    eventName: eventName,
+    eventTime: vFrom(row, 'Event Time') || vFrom(row, 'Event time'),
+    cityStateRaw: cityState
+  };
+  stop.key = stopKey(stop);
+  if (!stop.key || !stop.churchCity || !stop.churchState) return null;
+  return stop;
+}
+
+function renderEvaluationPicker() {
+  const container = document.getElementById('eval-picks');
+  if (!container || !evaluationPickerData) return;
+  const html = [];
+  html.push(renderPickSection('Past Due / Not Yet Evaluated', evaluationPickerData.pastDue, 'pastdue'));
+  html.push(renderPickSection('Up Next', evaluationPickerData.upcoming, 'upcoming'));
+  if (!evaluationPickerData.upcoming.length && !evaluationPickerData.pastDue.length) {
+    html.push('<div class="pick-empty">No scheduled churches are currently missing an evaluation for this tour group. You can still enter a church manually.</div>');
+  }
+  container.innerHTML = html.join('');
+}
+
+function renderPickSection(title, stops, badgeClass) {
+  if (!stops.length) return '<div class="pick-empty"><strong>' + title + ':</strong> None right now.</div>';
+  return '<div class="section-label" style="margin-bottom:8px">' + title + '</div>' + stops.map(function(stop) {
+    const active = selectedEvalPickKey === stop.key ? ' active' : '';
+    const meta = [formatDate(stop.date), stop.eventTime, stop.churchCity + ', ' + stop.churchState].filter(Boolean).join(' · ');
+    const pastor = stop.pastor ? '<br>Pastor ' + escapeHtml(stop.pastor) : '';
+    const multi = stop.dates && stop.dates.length > 1 ? '<br>Covers ' + stop.dates.length + ' scheduled visits' : '';
+    return '<div class="pick-item' + active + '" onclick="applyEvaluationPick(' + encodePick(stop) + ')"><div class="pick-top"><div class="pick-title">' + escapeHtml(stop.churchName) + '</div><span class="pick-badge ' + badgeClass + '">' + (badgeClass === 'upcoming' ? 'Upcoming' : 'Past Due') + '</span></div><div class="pick-meta">' + escapeHtml(meta) + pastor + multi + '</div></div>';
+  }).join('');
+}
+
+function applyEvaluationPick(encodedStop) {
+  const stop = JSON.parse(decodeURIComponent(encodedStop));
+  selectedEvalPickKey = stop.key;
+  document.getElementById('e-date').value = stop.date || '';
+  document.getElementById('e-church-name').value = stop.churchName || '';
+  document.getElementById('e-church-city').value = stop.churchCity || '';
+  document.getElementById('e-church-state').value = stop.churchState || '';
+  if (!v('e-pastor')) document.getElementById('e-pastor').value = stop.pastor || '';
+  syncEvalIncomeChurch();
+  renderEvaluationPicker();
+}
+
+function encodePick(stop) {
+  return '\'' + encodeURIComponent(JSON.stringify(stop)).replace(/'/g, '%27') + '\'';
+}
+
+function normalizeGroup(group) {
+  const val = String(group || '').toLowerCase().trim();
+  if (val === 'mens' || val === "men's" || val === 'men') return 'mens';
+  if (val === 'ladies' || val === "ladies'") return 'ladies';
+  return val;
+}
+
+function isEvaluatableEvent(eventName) {
+  const event = String(eventName || '').toLowerCase();
+  if (!event) return false;
+  if (event.indexOf('travel') > -1) return false;
+  if (event.indexOf('rest') > -1) return false;
+  if (event.indexOf('camp') > -1) return false;
+  return true;
+}
+
+function parseCityState(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return { city: '', state: '' };
+  const parts = raw.split(',').map(function(part) { return part.trim(); }).filter(Boolean);
+  if (parts.length >= 2) return { city: parts[0], state: parts[1].toUpperCase() };
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  if (tokens.length >= 2) return { city: tokens.slice(0, -1).join(' '), state: tokens[tokens.length - 1].toUpperCase() };
+  return { city: raw, state: '' };
+}
+
+function parseChurchFieldsFromRow(row) {
+  const combined = vFrom(row, 'Church Name / City / State');
+  const name = vFrom(row, 'Church Name');
+  const city = vFrom(row, 'Church City');
+  const state = vFrom(row, 'Church State');
+  if (name && city && state) return { name: name, city: city, state: state.toUpperCase() };
+  const parsed = parseCombinedChurch(combined);
+  return {
+    name: name || parsed.name,
+    city: city || parsed.city,
+    state: (state || parsed.state || '').toUpperCase()
+  };
+}
+
+function parseCombinedChurch(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return { name: '', city: '', state: '' };
+  const commaParts = raw.split(',').map(function(part) { return part.trim(); }).filter(Boolean);
+  if (commaParts.length >= 3) {
+    return {
+      name: commaParts.slice(0, commaParts.length - 2).join(', '),
+      city: commaParts[commaParts.length - 2],
+      state: commaParts[commaParts.length - 1]
+    };
+  }
+  const tokens = raw.split(/\s+/).filter(Boolean);
+  if (tokens.length >= 3 && /^[A-Za-z]{2,}$/.test(tokens[tokens.length - 1])) {
+    return {
+      name: tokens.slice(0, -2).join(' '),
+      city: tokens[tokens.length - 2],
+      state: tokens[tokens.length - 1]
+    };
+  }
+  return { name: raw, city: '', state: '' };
+}
+
+function stopKey(stop) {
+  const date = normalizeIsoDate(stop.date);
+  const name = normalizeKeyPart(stop.churchName);
+  const city = normalizeKeyPart(stop.churchCity);
+  const state = normalizeKeyPart(stop.churchState);
+  if (!date || !name || !city || !state) return '';
+  return [tourGroup, date, name, city, state].join('|');
+}
+
+function stopChurchKey(stop) {
+  const name = normalizeKeyPart(stop.churchName);
+  const city = normalizeKeyPart(stop.churchCity);
+  const state = normalizeKeyPart(stop.churchState);
+  if (!name || !city || !state) return '';
+  return [tourGroup, name, city, state].join('|');
+}
+
+function normalizeIsoDate(value) {
+  if (!value) return '';
+  const text = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  const d = text.indexOf('T') > -1 ? new Date(text) : new Date(text + 'T12:00:00');
+  if (isNaN(d)) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+function normalizeKeyPart(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function isoDateToday() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
+}
+
+function compareStops(a, b) {
+  if (a.date !== b.date) return a.date.localeCompare(b.date);
+  return a.churchName.localeCompare(b.churchName);
+}
+
+function vFrom(row, key) {
+  return row && row[key] ? String(row[key]).trim() : '';
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -879,18 +1180,18 @@ function fileToBase64(file) {
 
 function buildPayload(){
   if(role==='evaluation'){
-    const evalPayload = {role:'evaluation',tourGroup,date:v('e-date'),church:v('e-church'),pastor:v('e-pastor'),teenagers:rv['e-teens'],pbcConnections:rv['e-pbc'],pbcDetails:v('e-pbc-det'),otherColleges:v('e-colleges'),provided:checked('e-provided').join(', '),soulWinning:swRating,differences:v('e-diffs'),notes:v('e-notes'),recommend:document.getElementById('e-rec').value};
+    const evalPayload = {role:'evaluation',tourGroup,date:v('e-date'),church:churchLine('e'),churchName:v('e-church-name'),churchCity:v('e-church-city'),churchState:stateValue('e-church-state'),pastor:v('e-pastor'),teenagers:rv['e-teens'],pbcConnections:rv['e-pbc'],pbcDetails:v('e-pbc-det'),otherColleges:v('e-colleges'),provided:checked('e-provided').join(', '),soulWinning:swRating,differences:v('e-diffs'),notes:v('e-notes'),recommend:document.getElementById('e-rec').value};
     if(evalIncomeAddon==='yes'){
       const incEntries=[];
       document.querySelectorAll('[id^="eie-"]').forEach(e=>{const n=e.id.replace('eie-','');incEntries.push({amount:v('eia-'+n),category:v('eic-'+n),type:v('eit-'+n)});});
-      evalPayload.incomeAddon={church:v('ei-church'),date:v('ei-date'),entries:incEntries};
+      evalPayload.incomeAddon={church:churchLine('ei'),churchName:v('ei-church-name'),churchCity:v('ei-church-city'),churchState:stateValue('ei-church-state'),date:v('ei-date'),entries:incEntries};
     }
     return evalPayload;
   }
   if(finType==='expense'){const cat=v('x-cat');const catDetail=cat==='Other'?v('x-cat-other-detail'):'';return{role:'expenses',type:'Expense',tourGroup,date:v('x-date'),amount:v('x-amt'),category:cat,categoryDetail:catDetail,paidWithCash:document.getElementById('x-cash').checked?'Yes':''};}
-  if(finType==='income'){const entries=[];document.querySelectorAll('.income-entry').forEach(e=>{const n=e.id.replace('ie-','');entries.push({amount:v('ia-'+n),category:v('ic-'+n),type:v('it-'+n)});});return{role:'expenses',type:'Income',tourGroup,church:v('i-church'),date:v('i-date'),entries};}
+  if(finType==='income'){const entries=[];document.querySelectorAll('.income-entry').forEach(e=>{const n=e.id.replace('ie-','');entries.push({amount:v('ia-'+n),category:v('ic-'+n),type:v('it-'+n)});});return{role:'expenses',type:'Income',tourGroup,church:churchLine('i'),churchName:v('i-church-name'),churchCity:v('i-church-city'),churchState:stateValue('i-church-state'),date:v('i-date'),entries};}
   if(role==='socials') return{role:'socials',tourGroup,location:v('soc-location'),caption:v('soc-caption')};
-  if(role==='infocard') return{role:'infocard',tourGroup,firstName:v('c-first'),lastName:v('c-last'),gender:rv['c-gender'],dob:v('c-dob'),gradYear:v('c-grad'),email:v('c-email'),phone:v('c-phone'),city:v('c-city'),state:v('c-state'),zip:v('c-zip'),church:v('c-church'),pastor:v('c-pastor'),interests:checked('c-interests').join(', '),majors:checked('c-majors').join(', ')};
+  if(role==='infocard') return{role:'infocard',tourGroup,firstName:v('c-first'),lastName:v('c-last'),gender:rv['c-gender'],dob:v('c-dob'),gradYear:v('c-grad'),email:v('c-email'),phone:v('c-phone'),city:v('c-city'),state:v('c-state'),zip:v('c-zip'),church:churchLine('c'),churchName:v('c-church-name'),churchCity:v('c-church-city'),churchState:stateValue('c-church-state'),pastor:v('c-pastor'),interests:checked('c-interests').join(', '),majors:checked('c-majors').join(', ')};
 }
 async function submit(){
   document.getElementById('overlay').classList.add('show');
