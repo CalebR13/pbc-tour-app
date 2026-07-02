@@ -78,11 +78,18 @@ td a:hover, .view-link:hover { text-decoration: underline; }
 .eval-church { font-weight: 500; font-size: 15px; }
 .eval-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
 .eval-score { font-family: 'DM Mono', monospace; font-size: 20px; color: var(--gold); }
-.bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.bar-label { font-size: 11px; color: var(--muted); width: 80px; flex-shrink: 0; }
-.bar-bg { flex: 1; height: 4px; background: var(--surface2); border-radius: 2px; }
-.bar-fill { height: 100%; border-radius: 2px; background: var(--gold); }
-.bar-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--dim); width: 14px; }
+.eval-score-row { display: flex; gap: 12px; align-items: flex-start; flex-shrink: 0; }
+.eval-score-block { text-align: right; }
+.eval-score-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+.eval-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.support-list { display: grid; gap: 10px; }
+.support-row { display: grid; grid-template-columns: 130px 1fr 42px; align-items: center; gap: 10px; }
+.support-label { font-size: 12px; color: var(--muted); }
+.support-bar { height: 6px; background: var(--surface2); border-radius: 999px; overflow: hidden; }
+.support-fill { height: 100%; background: var(--gold); border-radius: 999px; }
+.support-count { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--dim); text-align: right; }
+.eval-note { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+.eval-note strong { color: var(--text); font-weight: 500; }
 .contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
 .contact-name { font-weight: 500; font-size: 15px; margin-bottom: 4px; }
 .contact-meta { font-size: 12px; color: var(--muted); line-height: 1.7; }
@@ -97,6 +104,7 @@ td a:hover, .view-link:hover { text-decoration: underline; }
 .error-msg { color: var(--red); font-size: 13px; padding: 20px; text-align: center; }
 
 @media (max-width: 600px) { .chart-row { grid-template-columns: 1fr; } }
+@media (max-width: 800px) { .support-row { grid-template-columns: 110px 1fr 34px; } }
 .pin-screen { position: fixed; inset: 0; background: #2a2a2a; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
 .pin-box { background: #333; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 36px 32px; text-align: center; max-width: 320px; width: 90%; }
 .pin-title { font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 800; color: #f0ede8; margin-bottom: 6px; }
@@ -119,8 +127,42 @@ td a:hover, .view-link:hover { text-decoration: underline; }
 .sched-no-lodging { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 8px; }
 
 .sched-day { margin-bottom: 20px; }
+.sched-shell { display: flex; flex-direction: column; gap: 16px; }
+.sched-overview { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 16px; }
+.sched-section-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.sched-section-toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: transparent; border: none; color: var(--text); padding: 14px 18px; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
+.sched-section-toggle:hover { background: rgba(255,255,255,0.03); }
+.sched-section-toggle span:last-child { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+.sched-section-body { padding: 0 18px 18px; }
+.sched-section-body.hidden { display: none; }
+.sched-hero, .sched-sidecard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+.sched-kicker { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.sched-hero-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.sched-hero-title h3 { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; }
+.sched-tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; background: var(--gold-bg); color: var(--gold); }
+.sched-summary-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.sched-meta-pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 10px; background: var(--surface2); color: var(--text); font-size: 12px; }
+.sched-progress-wrap { margin-bottom: 16px; }
+.sched-progress-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.sched-progress-bar { height: 8px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }
+.sched-progress-fill { height: 100%; background: linear-gradient(90deg, #f7b214 0%, #ffd66b 100%); border-radius: 999px; }
+.sched-summary-block { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 14px; }
+.sched-summary-block:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.sched-summary-heading { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
+.sched-summary-list { display: flex; flex-direction: column; gap: 10px; }
+.sched-summary-item { border-left: 3px solid var(--gold); background: rgba(247,178,20,0.06); border-radius: 8px; padding: 10px 12px; }
+.sched-summary-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.sched-summary-item p { font-size: 12px; color: var(--muted); line-height: 1.6; }
+.sched-empty-state { font-size: 13px; color: var(--dim); font-style: italic; }
+.sched-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.sched-jump-btn { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); border-radius: 999px; padding: 7px 12px; font-size: 12px; font-weight: 600; font-family: 'Montserrat', sans-serif; cursor: pointer; }
+.sched-jump-btn:hover { border-color: var(--gold); color: var(--gold); }
 .sched-date { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 .sched-date.today { color: var(--gold); border-bottom-color: var(--gold); }
+.sched-day.past { opacity: 0.55; }
+.sched-day.today { scroll-margin-top: 24px; }
+.sched-day.today .sched-date { color: var(--gold); border-bottom-color: var(--gold); }
+.sched-day.upcoming .sched-date { color: var(--text); }
 .sched-event { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 8px; position: relative; }
 .sched-event.today { border-color: var(--gold); }
 .sched-event-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
@@ -142,6 +184,7 @@ td a:hover, .view-link:hover { text-decoration: underline; }
 .edit-btns { display: flex; gap: 8px; margin-top: 16px; }
 .save-btn { flex: 1; background: var(--gold); color: var(--bg); border: none; padding: 10px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
 .cancel-btn { background: var(--surface2); border: 1px solid var(--border2); color: var(--muted); padding: 10px 16px; border-radius: var(--radius-sm); font-family: 'Montserrat', sans-serif; font-size: 13px; cursor: pointer; }
+@media (max-width: 900px) { .sched-overview { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -241,6 +284,8 @@ var activeFilter = 'all';
 var activeCategory = '';
 var chartCat = null;
 var chartDate = null;
+var scheduleAutoFocusDone = false;
+var pastDaysExpanded = false;
 
 var catColorMap = {
   'Food & Meals':          '#f7b214',
@@ -496,31 +541,67 @@ function renderIncome(rows) {
 }
 
 function renderEvaluations(rows) {
-  var ratings = rows.map(function(r) { return parseFloat(r['Soul-Winning Rating (1-5)']) || 0; }).filter(function(n) { return n > 0; });
-  var avg = ratings.length ? (ratings.reduce(function(a, b) { return a + b; }, 0) / ratings.length).toFixed(1) : '-';
+  function num(row, key) {
+    return parseFloat(row[key]) || 0;
+  }
+
+  function hasText(row, key) {
+    return !!String(row[key] || '').trim();
+  }
+
+  function teenLabel(value) {
+    return value ? value.split(': ')[1] || value : '-';
+  }
+
+  function providedList(row) {
+    return String(row['Provided by Church'] || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  }
+
+  var pbcConnections = rows.filter(function(r) { return r['PBC Connections'] === 'Yes'; });
+  var supportCounts = { 'Meals': 0, 'Lodging': 0, 'Love Offering / Special Gift': 0, 'Other': 0 };
+
+  rows.forEach(function(r) {
+    providedList(r).forEach(function(item) {
+      supportCounts[item] = (supportCounts[item] || 0) + 1;
+    });
+  });
+
+  var maxSupport = Math.max.apply(null, Object.keys(supportCounts).map(function(key) { return supportCounts[key]; }).concat([1]));
 
   var html = '<div class="metrics">';
   html += '<div class="metric"><div class="metric-label">Churches</div><div class="metric-value blue">' + rows.length + '</div></div>';
-  html += '<div class="metric"><div class="metric-label">Avg Soul-Winning</div><div class="metric-value gold">' + avg + '</div><div class="metric-sub">out of 5</div></div>';
-  html += '<div class="metric"><div class="metric-label">PBC Connections</div><div class="metric-value green">' + rows.filter(function(r) { return r['PBC Connections'] === 'Yes'; }).length + '</div></div>';
+  html += '<div class="metric"><div class="metric-label">PBC Connections</div><div class="metric-value green">' + pbcConnections.length + '</div></div>';
   html += '</div>';
+
+  html += '<div class="table-wrap" style="padding:18px 20px;margin-bottom:16px"><div class="chart-title" style="margin-bottom:12px">Church Support Snapshot</div><div class="support-list">';
+  Object.keys(supportCounts).forEach(function(key) {
+    html += '<div class="support-row"><div class="support-label">' + key + '</div><div class="support-bar"><div class="support-fill" style="width:' + (supportCounts[key] / maxSupport * 100) + '%"></div></div><div class="support-count">' + supportCounts[key] + '</div></div>';
+  });
+  html += '</div></div>';
+
   html += '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="export-btn" onclick="exportCSV(\'evaluations\')">Export CSV</button></div>';
 
   if (!rows.length) {
     html += '<div class="empty">No evaluations yet</div>';
   } else {
-    rows.slice().reverse().forEach(function(r) {
-      var sw = parseFloat(r['Soul-Winning Rating (1-5)']) || 0;
-      var rec = parseFloat(r['Recommend Returning (0-5)']) || 0;
-      var provided = (r['Provided by Church'] || '').split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    rows.slice().sort(function(a, b) {
+      return new Date(b['Visit Date']) - new Date(a['Visit Date']);
+    }).forEach(function(r) {
+      var sw = num(r, 'Soul-Winning Rating (1-5)');
+      var rec = num(r, 'Recommend Returning (0-5)');
+      var provided = providedList(r);
       html += '<div class="eval-card">';
-      html += '<div class="eval-top"><div><div class="eval-church">' + (r['Church Name / City / State'] || 'Unknown') + '</div><div class="eval-meta">' + fmtDate(r['Visit Date']) + ' · Pastor ' + (r['Pastor Name'] || '-') + (r['Submitted By'] ? ' · <span style="color:var(--gold)">' + r['Submitted By'] + '</span>' : '') + '</div></div><div class="eval-score">' + (sw || '-') + '/5</div></div>';
-      html += '<div class="bar-row"><div class="bar-label">Soul-winning</div><div class="bar-bg"><div class="bar-fill" style="width:' + (sw / 5 * 100) + '%"></div></div><div class="bar-num">' + (sw || '-') + '</div></div>';
-      html += '<div class="bar-row"><div class="bar-label">Recommend</div><div class="bar-bg"><div class="bar-fill" style="width:' + (rec / 5 * 100) + '%;background:var(--blue)"></div></div><div class="bar-num">' + (rec || '-') + '</div></div>';
-      if (r['Teenagers in Attendance (est.)']) html += '<div style="font-size:12px;color:var(--muted);margin-top:8px">Teenagers: ' + r['Teenagers in Attendance (est.)'] + '</div>';
-      if (r['PBC Connections'] === 'Yes') html += '<div style="font-size:12px;color:var(--green);margin-top:4px">PBC connection: ' + (r['PBC Connection Details'] || '') + '</div>';
-      if (provided.length) html += '<div style="font-size:12px;color:var(--muted);margin-top:4px">Provided: ' + provided.join(', ') + '</div>';
-      if (r['Notes for Future Visits']) html += '<div style="font-size:12px;color:var(--muted);margin-top:4px;font-style:italic">' + r['Notes for Future Visits'] + '</div>';
+      html += '<div class="eval-top"><div><div class="eval-church">' + (r['Church Name / City / State'] || 'Unknown') + '</div><div class="eval-meta">' + fmtDate(r['Visit Date']) + ' · Pastor ' + (r['Pastor Name'] || '-') + (r['Submitted By'] ? ' · <span style="color:var(--gold)">' + r['Submitted By'] + '</span>' : '') + '</div></div><div class="eval-score-row"><div class="eval-score-block"><div class="eval-score-label">Soul-winning</div><div class="eval-score">' + (sw || '-') + '/5</div></div><div class="eval-score-block"><div class="eval-score-label">Return</div><div class="eval-score" style="color:var(--blue)">' + (rec || '-') + '/5</div></div></div></div>';
+      html += '<div class="eval-badges">';
+      if (r['Teenagers in Attendance (est.)']) html += '<span class="badge badge-blue">Teens: ' + teenLabel(r['Teenagers in Attendance (est.)']) + '</span>';
+      if (r['PBC Connections'] === 'Yes') html += '<span class="badge badge-green">PBC connection</span>';
+      provided.forEach(function(item) {
+        html += '<span class="badge badge-gold">' + item + '</span>';
+      });
+      html += '</div>';
+      if (r['PBC Connections'] === 'Yes' && r['PBC Connection Details']) html += '<div class="eval-note"><strong>PBC connection:</strong> ' + r['PBC Connection Details'] + '</div>';
+      if (hasText(r, 'Differences from Standards')) html += '<div class="eval-note"><strong>Differences:</strong> ' + r['Differences from Standards'] + '</div>';
+      if (r['Notes for Future Visits']) html += '<div class="eval-note"><strong>Future visit:</strong> ' + r['Notes for Future Visits'] + '</div>';
       html += '</div>';
     });
   }
@@ -545,7 +626,7 @@ function renderContacts(rows) {
       var hasPhoto = r['Interest Form Photo Link'] && r['Interest Form Photo Link'].indexOf('http') === 0;
       html += '<div class="contact-card">';
       html += '<div class="contact-name">' + (r['First Name'] || '') + ' ' + (r['Last Name'] || '') + ' <span style="font-size:12px;color:var(--muted);font-weight:400">' + (r['Gender'] || '') + '</span></div>';
-      html += '<div class="contact-meta">' + (r['Email'] || '') + ' · ' + (r['Phone'] || '') + '<br>' + [r['City'], r['State'], r['Zip']].filter(Boolean).join(', ') + '<br>' + (r['Church Name / City / State'] || '') + ' · Pastor ' + (r['Pastor Name'] || '-') + '<br>Grad ' + (r['HS Grad Year'] || '-') + '</div>';
+      html += '<div class="contact-meta">' + (r['Email'] || '') + ' · ' + (r['Phone'] || '') + '<br>' + [r['Address Line'], [r['City'], r['State'], r['Zip']].filter(Boolean).join(', ')].filter(Boolean).join('<br>') + '<br>' + (r['Church Name / City / State'] || '') + ' · Pastor ' + (r['Pastor Name'] || '-') + '<br>Grad ' + (r['HS Grad Year'] || '-') + '</div>';
       if (r['Interests']) html += '<div class="contact-interests">' + r['Interests'] + '</div>';
       if (r['Majors of Interest']) html += '<div style="font-size:11px;color:var(--muted);margin-top:4px">' + r['Majors of Interest'] + '</div>';
       if (r['Submitted By']) html += '<div style="font-size:12px;color:var(--gold);margin-top:6px;font-weight:500">' + r['Submitted By'] + '</div>';
@@ -664,33 +745,99 @@ function renderSchedule(rows, lodgingRows) {
     eventsByDate[d].push(r);
   });
 
-  var todayStr = new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  var today = new Date();
+  var todayKey = scheduleDateKey(today);
+  var todayStr = today.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
   var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
   // Generate all dates May 16 - Aug 2 2026
   var start = new Date('2026-05-16T12:00:00');
   var end = new Date('2026-08-02T12:00:00');
-  var html = '';
+  var totalDays = Math.floor((end - start) / 86400000) + 1;
+  var elapsedDays = Math.max(0, Math.min(totalDays - 1, Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - start) / 86400000)));
+  var progressDays = elapsedDays + 1;
+  var progressPercent = Math.max(0, Math.min(100, (progressDays / totalDays) * 100));
+  var todayEvents = eventsByDate[todayStr] || [];
+  var nextEvent = null;
+  var nextEventDate = '';
+  Object.keys(eventsByDate).sort(function(a, b) { return parseScheduleDate(a) - parseScheduleDate(b); }).some(function(dateLabel) {
+    var dateObj = parseScheduleDate(dateLabel);
+    if (!dateObj || scheduleDateKey(dateObj) < todayKey) return false;
+    var dayEvents = eventsByDate[dateLabel] || [];
+    if (!dayEvents.length) return false;
+    nextEvent = dayEvents[0];
+    nextEventDate = dateLabel;
+    return true;
+  });
+  var todayGroups = group === 'all' ? ['ladies','mens'] : [group];
+  var todayLodgingHtml = todayGroups.map(function(g) {
+    var key = todayStr + '|' + g;
+    var entries = lodgingByKey[key] || [];
+    var badge = group === 'all' ? '<span style="font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:' + (g === 'ladies' ? '#E879A0' : '#7BAFF8') + '">' + (g === 'ladies' ? 'Ladies' : 'Men\'s') + '</span> ' : '';
+    if (!entries.length || !entries[0]['Lodging Location']) return badge + '<span class="sched-empty-state">No lodging set</span>';
+    var entry = entries[0];
+    return badge + entry['Lodging Location'] + (entry['Contact'] ? ' · ' + entry['Contact'] : '') + (entry['Notes'] ? ' — ' + entry['Notes'] : '');
+  }).join('<br>');
+  var heroTitle = group === 'all' ? 'Where We Are Today' : (group === 'ladies' ? 'Ladies\' Tour Today' : 'Men\'s Tour Today');
+  var html = '<div class="sched-shell">';
+  html += '<div class="sched-overview">';
+  html += '<div class="sched-hero">';
+  html += '<div class="sched-kicker">Live Tour Position</div>';
+  html += '<div class="sched-hero-title"><h3>' + heroTitle + '</h3><span class="sched-tag">You are here</span></div>';
+  html += '<div class="sched-summary-meta"><span class="sched-meta-pill">📅 ' + today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) + '</span><span class="sched-meta-pill">🚌 ' + (group === 'all' ? 'All Tours' : (group === 'ladies' ? 'Ladies\'' : 'Men\'s')) + '</span></div>';
+  html += '<div class="sched-progress-wrap"><div class="sched-progress-top"><span>Day ' + progressDays + ' of ' + totalDays + '</span><span>' + Math.round(progressPercent) + '% complete</span></div><div class="sched-progress-bar"><div class="sched-progress-fill" style="width:' + progressPercent.toFixed(1) + '%"></div></div></div>';
+  html += '<div class="sched-summary-block"><div class="sched-summary-heading">Today\'s Events</div>';
+  if (todayEvents.length) {
+    html += '<div class="sched-summary-list">';
+    todayEvents.forEach(function(ev) {
+      var eventTime = ev['Event Time'] || ev['Event time'] || 'Time TBD';
+      var location = [ev['Destination'], ev['Destination City, State']].filter(Boolean).join(' · ');
+      html += '<div class="sched-summary-item"><h4>' + (ev['Event'] || 'Scheduled Event') + '</h4><p>' + eventTime + (location ? ' · ' + location : '') + (ev['Leader Notes'] ? '<br>' + ev['Leader Notes'] : '') + '</p></div>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="sched-empty-state">No events are scheduled for today.</div>';
+  }
+  html += '</div>';
+  html += '<div class="sched-summary-block"><div class="sched-summary-heading">Tonight\'s Lodging</div><div style="font-size:13px;line-height:1.7;color:var(--text)">' + todayLodgingHtml + '</div></div>';
+  html += '</div>';
+  html += '<div class="sched-sidecard">';
+  html += '<div class="sched-kicker">Look Ahead</div>';
+  html += '<div class="sched-summary-block"><div class="sched-summary-heading">Next Up</div>';
+  if (nextEvent) {
+    html += '<div class="sched-summary-item"><h4>' + (nextEvent['Event'] || 'Upcoming Event') + '</h4><p>' + nextEventDate + (nextEvent['Event Time'] || nextEvent['Event time'] ? ' · ' + (nextEvent['Event Time'] || nextEvent['Event time']) : '') + '<br>' + [nextEvent['Destination'], nextEvent['Destination City, State']].filter(Boolean).join(' · ') + '</p></div>';
+  } else {
+    html += '<div class="sched-empty-state">No upcoming events found in the current tour window.</div>';
+  }
+  html += '</div>';
+  html += '<div class="sched-summary-block"><div class="sched-summary-heading">Quick Actions</div><div class="sched-actions"><button class="sched-jump-btn" onclick="jumpToToday()">Jump to Today</button><button class="sched-jump-btn" onclick="window.scrollTo({top: document.getElementById(\'panel-schedule\').offsetTop, behavior: \"smooth\"})">Top of Schedule</button></div></div>';
+  html += '</div>';
+  html += '</div>';
   var cur = new Date(start);
+  var pastDaysHtml = '';
+  var currentDaysHtml = '';
 
   while (cur <= end) {
     var dateStr = cur.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    var dateKey = scheduleDateKey(cur);
     var dayName = DAYS[cur.getDay()];
     var isToday = dateStr === todayStr;
+    var isPast = dateKey < todayKey;
+    var dayState = isToday ? ' today' : (isPast ? ' past' : ' upcoming');
     var events = eventsByDate[dateStr] || [];
     var groupsToShow = group === 'all' ? ['ladies','mens'] : [group];
 
-    html += '<div class="sched-day">';
-    html += '<div class="sched-date' + (isToday?' today':'') + '">';
-    html += MONTHS[cur.getMonth()] + ' ' + cur.getDate() + ' — ' + dayName;
-    if (isToday) html += ' ★ TODAY';
-    html += '</div>';
+    var dayHtml = '<div class="sched-day' + dayState + '"' + (isToday ? ' id="sched-today"' : '') + '>';
+    dayHtml += '<div class="sched-date' + (isToday?' today':'') + '">';
+    dayHtml += MONTHS[cur.getMonth()] + ' ' + cur.getDate() + ' — ' + dayName;
+    if (isToday) dayHtml += ' ★ TODAY';
+    dayHtml += '</div>';
 
     // Events
     if (events.length === 0) {
       var addGroup = group === 'all' ? 'ladies' : group;
-      html += '<div class="sched-event" style="border-style:dashed;opacity:0.4;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--dim)">No events</span><button class="edit-btn" onclick="openAddModal(\'' + escapeDateStr(dateStr) + '\',\'' + addGroup + '\')">+ Add</button></div>';
+      dayHtml += '<div class="sched-event" style="border-style:dashed;opacity:0.4;display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:var(--dim)">No events</span><button class="edit-btn" onclick="openAddModal(\'' + escapeDateStr(dateStr) + '\',\'' + addGroup + '\')">+ Add</button></div>';
     } else {
       events.forEach(function(ev) {
         var rowIdx = filtered.indexOf(ev);
@@ -700,22 +847,22 @@ function renderSchedule(rows, lodgingRows) {
         var badgeColor = evGroup==='ladies' ? '#E879A0' : '#7BAFF8';
         var badgeLabel = evGroup==='ladies' ? "Ladies'" : evGroup==='mens' ? "Men's" : '';
         var badge = badgeLabel ? '<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:' + badgeBg + ';color:' + badgeColor + ';margin-left:8px">' + badgeLabel + '</span>' : '';
-        html += '<div class="sched-event' + (isToday?' today':'') + '" style="border-left:3px solid ' + borderColor + ';padding-left:12px">';
+        dayHtml += '<div class="sched-event' + (isToday?' today':'') + '" style="border-left:3px solid ' + borderColor + ';padding-left:12px">';
         var evType = ev['Event'] || '';
-        html += '<div class="sched-event-title"><span>' + (evType||'—') + badge + '</span><div style="display:flex;gap:4px"><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button><button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteEvent(' + rowIdx + ')">✕</button></div></div>';
-        if (ev['Event time']) html += '<div class="sched-event-time">⏰ ' + ev['Event time'] + '</div>';
+        dayHtml += '<div class="sched-event-title"><span>' + (evType||'—') + badge + '</span><div style="display:flex;gap:4px"><button class="edit-btn" onclick="openEditModal(' + rowIdx + ')">Edit</button><button class="edit-btn" style="color:var(--red);border-color:var(--red)" onclick="deleteEvent(' + rowIdx + ')">✕</button></div></div>';
+        if (ev['Event time']) dayHtml += '<div class="sched-event-time">⏰ ' + ev['Event time'] + '</div>';
         var loc = [ev['Destination'],ev['Destination City, State']].filter(Boolean).join(' · ');
-        if (loc) html += '<div class="sched-event-detail">' + loc + '</div>';
-        if (ev['Pastor']) html += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
-        if (ev['Leader Notes']) html += '<div class="sched-event-notes">' + ev['Leader Notes'] + '</div>';
-        html += '</div>';
+        if (loc) dayHtml += '<div class="sched-event-detail">' + loc + '</div>';
+        if (ev['Pastor']) dayHtml += '<div class="sched-event-detail">Pastor: ' + ev['Pastor'] + '</div>';
+        if (ev['Leader Notes']) dayHtml += '<div class="sched-event-notes">' + ev['Leader Notes'] + '</div>';
+        dayHtml += '</div>';
       });
       // Add event button for additional events
-      html += '<div style="text-align:right;margin-top:4px"><button class="edit-btn" onclick="openAddModal(\'' + escapeDateStr(dateStr) + '\',\'' + addGroup + '\')">+ Add event</button></div>';
+      dayHtml += '<div style="text-align:right;margin-top:4px"><button class="edit-btn" onclick="openAddModal(\'' + escapeDateStr(dateStr) + '\',\'' + addGroup + '\')">+ Add event</button></div>';
     }
 
     // Lodging - always shown at bottom, one row per group, editable not deletable
-    html += '<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">';
+    dayHtml += '<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">';
     groupsToShow.forEach(function(g) {
       var lKey = dateStr + '|' + g;
       var lEntries = lodgingByKey[lKey] || [];
@@ -728,19 +875,65 @@ function renderSchedule(rows, lodgingRows) {
       var lText = lEntries.length && lEntries[0]['Lodging Location'] ? lEntries[0]['Lodging Location'] : '<span style="color:var(--dim);font-style:italic">Not set</span>';
       var lContact = lEntries.length && lEntries[0]['Contact'] ? ' · ' + lEntries[0]['Contact'] : '';
       var lNotes = lEntries.length && lEntries[0]['Notes'] ? ' <span style="color:var(--dim);font-size:11px;font-style:italic">— ' + lEntries[0]['Notes'] + '</span>' : '';
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;background:' + lBg + ';border:1px solid ' + lBorderColor + ';border-radius:6px;padding:7px 10px">';
-      html += '<div style="font-size:12px;color:var(--text)">🛏️ ' + lBadge + lText + lContact + lNotes + '</div>';
+      dayHtml += '<div style="display:flex;align-items:center;justify-content:space-between;background:' + lBg + ';border:1px solid ' + lBorderColor + ';border-radius:6px;padding:7px 10px">';
+      dayHtml += '<div style="font-size:12px;color:var(--text)">🛏️ ' + lBadge + lText + lContact + lNotes + '</div>';
       var lEditLabel = lEntries.length && lEntries[0]['Lodging Location'] ? 'Edit' : '+ Add';
-      html += '<button class="edit-btn" onclick="editLodging(\'' + escapeDateStr(dateStr) + '\',\'' + g + '\')">' + lEditLabel + '</button>';
-      html += '</div>';
+      dayHtml += '<button class="edit-btn" onclick="editLodging(\'' + escapeDateStr(dateStr) + '\',\'' + g + '\')">' + lEditLabel + '</button>';
+      dayHtml += '</div>';
     });
-    html += '</div>';
+    dayHtml += '</div>';
 
-    html += '</div>'; // close sched-day
+    dayHtml += '</div>'; // close sched-day
+    if (isPast) pastDaysHtml += dayHtml;
+    else currentDaysHtml += dayHtml;
     cur.setDate(cur.getDate() + 1);
   }
 
+  if (pastDaysHtml) {
+    html += '<div class="sched-section-card">';
+    html += '<button class="sched-section-toggle" onclick="togglePastDays()"><span>Past Days</span><span id="past-days-toggle-label">' + (pastDaysExpanded ? 'Hide' : 'Show') + '</span></button>';
+    html += '<div class="sched-section-body' + (pastDaysExpanded ? '' : ' hidden') + '" id="past-days-body">' + pastDaysHtml + '</div>';
+    html += '</div>';
+  }
+  if (currentDaysHtml) html += currentDaysHtml;
+  html += '</div>';
   document.getElementById('sched-body').innerHTML = html;
+  if (!scheduleAutoFocusDone) {
+    scheduleAutoFocusDone = true;
+    setTimeout(jumpToToday, 80);
+  }
+}
+
+function parseScheduleDate(val) {
+  if (!val) return null;
+  if (Object.prototype.toString.call(val) === '[object Date]' && !isNaN(val.getTime())) return new Date(val.getTime());
+  var s = String(val);
+  var d;
+  if (s.indexOf('T') > -1 || /^\d{4}-\d{2}-\d{2}/.test(s)) d = new Date(s);
+  else d = new Date(s + ', 2026');
+  return isNaN(d) ? null : d;
+}
+
+function scheduleDateKey(val) {
+  var d = parseScheduleDate(val);
+  if (!d) return '';
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+function jumpToToday() {
+  var el = document.getElementById('sched-today');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function togglePastDays() {
+  pastDaysExpanded = !pastDaysExpanded;
+  var body = document.getElementById('past-days-body');
+  var label = document.getElementById('past-days-toggle-label');
+  if (body) body.classList.toggle('hidden', !pastDaysExpanded);
+  if (label) label.textContent = pastDaysExpanded ? 'Hide' : 'Show';
 }
 
 function openEditModal(rowIdx) {

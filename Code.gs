@@ -48,7 +48,7 @@ var HEADERS = {
   ],
   "Interest Cards": [
     "Timestamp", "Tour Group", "First Name", "Last Name", "Gender", "Date of Birth",
-    "HS Grad Year", "Email", "Phone", "City", "State", "Zip",
+    "HS Grad Year", "Email", "Phone", "Address Line", "City", "State", "Zip",
     "Church Name / City / State", "Church Name", "Church City", "Church State", "Pastor Name",
     "Interests", "Majors of Interest", "Interest Form Photo Link", "Submitted By"
   ],
@@ -360,6 +360,7 @@ function writeInfoCard(ss, d) {
     "HS Grad Year": d.gradYear || "",
     "Email": d.email || "",
     "Phone": d.phone || "",
+    "Address Line": d.addressLine || "",
     "City": d.city || "",
     "State": d.state || "",
     "Zip": d.zip || "",

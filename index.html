@@ -525,6 +525,8 @@ window.addEventListener('load', function() {
     <div class="field-group"><label class="field-label">Email <span class="req">*</span></label><input type="email" placeholder="student@email.com" id="c-email"></div>
     <div class="field-group"><label class="field-label">Phone <span class="req">*</span></label><input type="tel" placeholder="(555) 000-0000" id="c-phone"></div>
 
+    <div class="field-group"><label class="field-label">Address Line <span class="req">*</span></label><input type="text" placeholder="123 Main St" id="c-address"></div>
+
     <div class="row-3">
       <div class="field-group"><label class="field-label">City <span class="req">*</span></label><input type="text" placeholder="City" id="c-city"></div>
       <div class="field-group"><label class="field-label">State <span class="req">*</span></label><input type="text" placeholder="IL" maxlength="2" id="c-state"></div>
@@ -890,6 +892,7 @@ function review(){
     h+=row('Name',v('c-first')+' '+v('c-last'))+row('Gender',rv['c-gender']||'—')
       +row('Date of birth',v('c-dob'))+row('HS grad year',v('c-grad'))
       +row('Email',v('c-email'))+row('Phone',v('c-phone'))
+      +row('Address',v('c-address'))
       +row('City/State/Zip',[v('c-city'),v('c-state'),v('c-zip')].filter(Boolean).join(', '))
       +row('Destination Church',churchLine('c'))+row('Pastor',v('c-pastor'))
       +row('Interests',checked('c-interests').join(', ')||'—')
@@ -1191,7 +1194,7 @@ function buildPayload(){
   if(finType==='expense'){const cat=v('x-cat');const catDetail=cat==='Other'?v('x-cat-other-detail'):'';return{role:'expenses',type:'Expense',tourGroup,date:v('x-date'),amount:v('x-amt'),category:cat,categoryDetail:catDetail,paidWithCash:document.getElementById('x-cash').checked?'Yes':''};}
   if(finType==='income'){const entries=[];document.querySelectorAll('.income-entry').forEach(e=>{const n=e.id.replace('ie-','');entries.push({amount:v('ia-'+n),category:v('ic-'+n),type:v('it-'+n)});});return{role:'expenses',type:'Income',tourGroup,church:churchLine('i'),churchName:v('i-church-name'),churchCity:v('i-church-city'),churchState:stateValue('i-church-state'),date:v('i-date'),entries};}
   if(role==='socials') return{role:'socials',tourGroup,location:v('soc-location'),caption:v('soc-caption')};
-  if(role==='infocard') return{role:'infocard',tourGroup,firstName:v('c-first'),lastName:v('c-last'),gender:rv['c-gender'],dob:v('c-dob'),gradYear:v('c-grad'),email:v('c-email'),phone:v('c-phone'),city:v('c-city'),state:v('c-state'),zip:v('c-zip'),church:churchLine('c'),churchName:v('c-church-name'),churchCity:v('c-church-city'),churchState:stateValue('c-church-state'),pastor:v('c-pastor'),interests:checked('c-interests').join(', '),majors:checked('c-majors').join(', ')};
+  if(role==='infocard') return{role:'infocard',tourGroup,firstName:v('c-first'),lastName:v('c-last'),gender:rv['c-gender'],dob:v('c-dob'),gradYear:v('c-grad'),email:v('c-email'),phone:v('c-phone'),addressLine:v('c-address'),city:v('c-city'),state:v('c-state'),zip:v('c-zip'),church:churchLine('c'),churchName:v('c-church-name'),churchCity:v('c-church-city'),churchState:stateValue('c-church-state'),pastor:v('c-pastor'),interests:checked('c-interests').join(', '),majors:checked('c-majors').join(', ')};
 }
 async function submit(){
   document.getElementById('overlay').classList.add('show');
@@ -1202,6 +1205,7 @@ async function submit(){
     if(!submittedBy){ const b=document.getElementById('err'); b.textContent='Please select your name before submitting.'; b.style.display='block'; document.getElementById('overlay').classList.remove('show'); document.getElementById('btn-sub').disabled=false; return; }
     if(finType==='expense'){ const rf=document.getElementById('x-file'); const paidWithCash=document.getElementById('x-cash') && document.getElementById('x-cash').checked; if(!paidWithCash && (!rf||rf.files.length===0)){ const b=document.getElementById('err'); b.textContent='A photo of the receipt is required unless the expense was paid with cash.'; b.style.display='block'; document.getElementById('overlay').classList.remove('show'); document.getElementById('btn-sub').disabled=false; return; } }
     const payload=buildPayload();
+    if(role==='infocard' && !payload.addressLine){ const b=document.getElementById('err'); b.textContent='Address Line is required for Maverick Club cards.'; b.style.display='block'; document.getElementById('overlay').classList.remove('show'); document.getElementById('btn-sub').disabled=false; return; }
     payload.submittedBy = submittedBy;
     const r=await fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const j=await r.json();
